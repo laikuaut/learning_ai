@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>03: Flexboxレイアウト</title>
+  <!--
+    学べる内容:
+      - Flexboxの基本概念（コンテナとアイテム）
+      - flex-direction（主軸の方向）
+      - justify-content（主軸方向の配置）
+      - align-items（交差軸方向の配置）
+      - flex-wrap（折り返し）
+      - gap（アイテム間の間隔）
+      - flex-grow / flex-shrink / flex-basis
+      - 実践的なレイアウトパターン
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #43e97b, #38f9d7);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #27ae60;
+      margin-bottom: 10px;
+      font-size: 1.3em;
+    }
+
+    h3 {
+      color: #555;
+      margin: 10px 0 5px;
+      font-size: 1em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    /* Flexデモ用の共通スタイル */
+    .flex-demo {
+      border: 2px dashed #bdc3c7;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+      min-height: 60px;
+    }
+
+    .flex-item {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .flex-item:nth-child(2) { background-color: #2ecc71; }
+    .flex-item:nth-child(3) { background-color: #e74c3c; }
+    .flex-item:nth-child(4) { background-color: #f39c12; }
+    .flex-item:nth-child(5) { background-color: #9b59b6; }
+
+    /* === flex-direction === */
+    .fd-row {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .fd-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .fd-row-reverse {
+      display: flex;
+      flex-direction: row-reverse;
+      gap: 10px;
+    }
+
+    /* === justify-content === */
+    .jc-start   { display: flex; justify-content: flex-start; gap: 10px; }
+    .jc-center  { display: flex; justify-content: center; gap: 10px; }
+    .jc-end     { display: flex; justify-content: flex-end; gap: 10px; }
+    .jc-between { display: flex; justify-content: space-between; }
+    .jc-around  { display: flex; justify-content: space-around; }
+    .jc-evenly  { display: flex; justify-content: space-evenly; }
+
+    /* === align-items === */
+    .ai-demo {
+      min-height: 120px;
+    }
+
+    .ai-stretch { display: flex; align-items: stretch; gap: 10px; }
+    .ai-start   { display: flex; align-items: flex-start; gap: 10px; }
+    .ai-center  { display: flex; align-items: center; gap: 10px; }
+    .ai-end     { display: flex; align-items: flex-end; gap: 10px; }
+
+    .ai-demo .flex-item:nth-child(1) { padding: 10px 20px; }
+    .ai-demo .flex-item:nth-child(2) { padding: 20px; }
+    .ai-demo .flex-item:nth-child(3) { padding: 30px 20px; }
+
+    /* === flex-wrap === */
+    .fw-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .fw-wrap .flex-item {
+      min-width: 150px;
+      flex: 1;
+    }
+
+    /* === flex-grow === */
+    .fg-demo {
+      display: flex;
+      gap: 10px;
+    }
+
+    .fg-0 { flex-grow: 0; }
+    .fg-1 { flex-grow: 1; }
+    .fg-2 { flex-grow: 2; }
+
+    /* === 実践パターン === */
+
+    /* ナビゲーションバー */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2c3e50;
+      padding: 10px 20px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+
+    .navbar .logo {
+      color: #fff;
+      font-size: 1.3em;
+      font-weight: bold;
+    }
+
+    .navbar .nav-links {
+      display: flex;
+      gap: 15px;
+      list-style: none;
+    }
+
+    .navbar .nav-links a {
+      color: #ecf0f1;
+      text-decoration: none;
+    }
+
+    .navbar .nav-links a:hover {
+      color: #3498db;
+    }
+
+    /* カードレイアウト */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .card {
+      flex: 1 1 250px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card h4 {
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    /* Holy Grail レイアウト */
+    .holy-grail {
+      display: flex;
+      gap: 15px;
+      min-height: 200px;
+    }
+
+    .holy-grail .sidebar-left {
+      flex: 0 0 150px;
+      background-color: #aed6f1;
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    .holy-grail .main-content {
+      flex: 1;
+      background-color: #a9dfbf;
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    .holy-grail .sidebar-right {
+      flex: 0 0 150px;
+      background-color: #f9e79f;
+      padding: 15px;
+      border-radius: 6px;
+    }
+
+    /* 中央寄せ（Flex最強パターン） */
+    .center-demo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 150px;
+      background-color: #f0f0f0;
+      border-radius: 6px;
+    }
+
+    .center-box {
+      background-color: #9b59b6;
+      color: white;
+      padding: 20px 40px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Flexboxレイアウト サンプル</h1>
+
+  <!-- flex-direction -->
+  <div class="section">
+    <h2>1. flex-direction（主軸の方向）</h2>
+
+    <h3><code>row</code>（デフォルト: 横並び）</h3>
+    <div class="flex-demo fd-row">
+      <div class="flex-item">1</div>
+      <div class="flex-item">2</div>
+      <div class="flex-item">3</div>
+    </div>
+
+    <h3><code>column</code>（縦並び）</h3>
+    <div class="flex-demo fd-column">
+      <div class="flex-item">1</div>
+      <div class="flex-item">2</div>
+      <div class="flex-item">3</div>
+    </div>
+
+    <h3><code>row-reverse</code>（横並び・逆順）</h3>
+    <div class="flex-demo fd-row-reverse">
+      <div class="flex-item">1</div>
+      <div class="flex-item">2</div>
+      <div class="flex-item">3</div>
+    </div>
+  </div>
+
+  <!-- justify-content -->
+  <div class="section">
+    <h2>2. justify-content（主軸方向の配置）</h2>
+
+    <h3><code>flex-start</code></h3>
+    <div class="flex-demo jc-start">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+
+    <h3><code>center</code></h3>
+    <div class="flex-demo jc-center">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+
+    <h3><code>flex-end</code></h3>
+    <div class="flex-demo jc-end">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+
+    <h3><code>space-between</code>（両端揃え）</h3>
+    <div class="flex-demo jc-between">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+
+    <h3><code>space-around</code></h3>
+    <div class="flex-demo jc-around">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+
+    <h3><code>space-evenly</code>（均等配置）</h3>
+    <div class="flex-demo jc-evenly">
+      <div class="flex-item">A</div><div class="flex-item">B</div><div class="flex-item">C</div>
+    </div>
+  </div>
+
+  <!-- align-items -->
+  <div class="section">
+    <h2>3. align-items（交差軸方向の配置）</h2>
+
+    <h3><code>stretch</code>（デフォルト: 高さを揃える）</h3>
+    <div class="flex-demo ai-demo ai-stretch">
+      <div class="flex-item">小</div><div class="flex-item">中くらい</div><div class="flex-item">大きな要素</div>
+    </div>
+
+    <h3><code>flex-start</code>（上揃え）</h3>
+    <div class="flex-demo ai-demo ai-start">
+      <div class="flex-item">小</div><div class="flex-item">中くらい</div><div class="flex-item">大きな要素</div>
+    </div>
+
+    <h3><code>center</code>（中央揃え）</h3>
+    <div class="flex-demo ai-demo ai-center">
+      <div class="flex-item">小</div><div class="flex-item">中くらい</div><div class="flex-item">大きな要素</div>
+    </div>
+
+    <h3><code>flex-end</code>（下揃え）</h3>
+    <div class="flex-demo ai-demo ai-end">
+      <div class="flex-item">小</div><div class="flex-item">中くらい</div><div class="flex-item">大きな要素</div>
+    </div>
+  </div>
+
+  <!-- flex-wrap -->
+  <div class="section">
+    <h2>4. flex-wrap（折り返し）</h2>
+    <p>ウィンドウ幅を狭めると自動で折り返されます。</p>
+    <div class="flex-demo fw-wrap">
+      <div class="flex-item">アイテム1</div>
+      <div class="flex-item">アイテム2</div>
+      <div class="flex-item">アイテム3</div>
+      <div class="flex-item">アイテム4</div>
+      <div class="flex-item">アイテム5</div>
+    </div>
+  </div>
+
+  <!-- flex-grow -->
+  <div class="section">
+    <h2>5. flex-grow（伸び率）</h2>
+    <p><code>flex-grow: 2</code> は <code>flex-grow: 1</code> の2倍の余白を吸収します。</p>
+    <div class="flex-demo fg-demo">
+      <div class="flex-item fg-0">grow: 0</div>
+      <div class="flex-item fg-1">grow: 1</div>
+      <div class="flex-item fg-2">grow: 2</div>
+    </div>
+  </div>
+
+  <!-- 実践パターン -->
+  <div class="section">
+    <h2>6. 実践パターン</h2>
+
+    <h3>ナビゲーションバー</h3>
+    <nav class="navbar">
+      <span class="logo">MySite</span>
+      <ul class="nav-links">
+        <li><a href="#">ホーム</a></li>
+        <li><a href="#">記事</a></li>
+        <li><a href="#">概要</a></li>
+      </ul>
+    </nav>
+
+    <h3>カードレイアウト</h3>
+    <div class="card-container">
+      <div class="card">
+        <h4>HTML入門</h4>
+        <p>Webページの構造を学びます。</p>
+      </div>
+      <div class="card">
+        <h4>CSS基礎</h4>
+        <p>スタイリングの基本を習得します。</p>
+      </div>
+      <div class="card">
+        <h4>JavaScript</h4>
+        <p>動的なページの作り方を学びます。</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 15px;">Holy Grail レイアウト（3カラム）</h3>
+    <div class="holy-grail">
+      <div class="sidebar-left">サイドバー左<br>(flex: 0 0 150px)</div>
+      <div class="main-content">メインコンテンツ<br>(flex: 1)<br>残りのスペースを全て占有します。</div>
+      <div class="sidebar-right">サイドバー右<br>(flex: 0 0 150px)</div>
+    </div>
+
+    <h3 style="margin-top: 15px;">完全中央寄せ（Flexbox最強パターン）</h3>
+    <div class="center-demo">
+      <div class="center-box">justify + align = 完全中央</div>
+    </div>
+    <p><small><code>display: flex; justify-content: center; align-items: center;</code> の3行で完全中央寄せが実現できます。</small></p>
+  </div>
+</body>
+</html>

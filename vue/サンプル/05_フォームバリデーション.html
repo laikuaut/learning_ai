@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05 フォームバリデーション</title>
+  <!--
+    ========================================
+    学べる内容:
+    - v-model による各種フォーム要素の制御
+    - リアルタイムバリデーション
+    - computed によるバリデーション結果の算出
+    - フォーム送信とエラーハンドリング
+    - パスワード強度の判定
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px; }
+    .form-card { background: white; border-radius: 20px; padding: 36px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .form-card h1 { text-align: center; color: #333; margin-bottom: 8px; font-size: 24px; }
+    .form-card .subtitle { text-align: center; color: #999; font-size: 14px; margin-bottom: 28px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 14px; }
+    .form-group label .required { color: #e53935; margin-left: 2px; }
+    .input-wrapper { position: relative; }
+    .form-input { width: 100%; padding: 11px 14px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s; }
+    .form-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+    .form-input.error { border-color: #e53935; }
+    .form-input.valid { border-color: #43a047; }
+    .input-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+    .error-text { color: #e53935; font-size: 13px; margin-top: 4px; }
+    .helper-text { color: #999; font-size: 12px; margin-top: 4px; }
+    .strength-bar { display: flex; gap: 4px; margin-top: 8px; }
+    .strength-segment { flex: 1; height: 4px; border-radius: 2px; background: #e0e0e0; transition: background 0.3s; }
+    .strength-label { font-size: 12px; margin-top: 4px; }
+    .checkbox-group { display: flex; align-items: flex-start; gap: 8px; }
+    .checkbox-group input[type="checkbox"] { margin-top: 3px; accent-color: #667eea; }
+    .submit-btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .submit-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .submit-btn.active:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+    .submit-btn.disabled { background: #e0e0e0; color: #999; cursor: not-allowed; }
+    .success-screen { text-align: center; padding: 40px 0; }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-screen h2 { color: #43a047; margin-bottom: 8px; }
+    .char-counter { text-align: right; font-size: 12px; margin-top: 4px; }
+    .step-indicator { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; transition: all 0.3s; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="form-card">
+      <!-- 送信完了画面 -->
+      <template v-if="isSubmitted">
+        <div class="success-screen">
+          <div class="success-icon">🎉</div>
+          <h2>登録完了！</h2>
+          <p style="color: #666;">{{ form.name }}さん、ようこそ！</p>
+          <p style="color: #999; font-size: 13px; margin-top: 4px;">{{ form.email }} に確認メールを送信しました</p>
+          <button
+            @click="resetForm"
+            class="submit-btn active"
+            style="margin-top: 24px;"
+          >
+            新規登録
+          </button>
+        </div>
+      </template>
+
+      <!-- 登録フォーム -->
+      <template v-else>
+        <h1>アカウント作成</h1>
+        <p class="subtitle">必要事項を入力してください</p>
+
+        <!-- 入力完了度インジケーター -->
+        <div class="step-indicator">
+          <div
+            v-for="(field, i) in requiredFields"
+            :key="i"
+            class="step-dot"
+            :style="{ background: fieldCompleted(field) ? '#43a047' : '#e0e0e0' }"
+          ></div>
+        </div>
+
+        <form @submit.prevent="handleSubmit">
+          <!-- 名前 -->
+          <div class="form-group">
+            <label>名前 <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model.trim="form.name"
+                :class="['form-input', fieldClass('name')]"
+                placeholder="山田 太郎"
+                @blur="touch('name')"
+              >
+              <span class="input-icon" v-if="touched.name">{{ errors.name ? '❌' : '✅' }}</span>
+            </div>
+            <p v-if="touched.name && errors.name" class="error-text">{{ errors.name }}</p>
+          </div>
+
+          <!-- メール -->
+          <div class="form-group">
+            <label>メールアドレス <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model.trim="form.email"
+                type="email"
+                :class="['form-input', fieldClass('email')]"
+                placeholder="mail@example.com"
+                @blur="touch('email')"
+              >
+              <span class="input-icon" v-if="touched.email">{{ errors.email ? '❌' : '✅' }}</span>
+            </div>
+            <p v-if="touched.email && errors.email" class="error-text">{{ errors.email }}</p>
+          </div>
+
+          <!-- パスワード -->
+          <div class="form-group">
+            <label>パスワード <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                :class="['form-input', fieldClass('password')]"
+                placeholder="8文字以上"
+                @blur="touch('password')"
+              >
+              <span
+                class="input-icon"
+                style="cursor: pointer;"
+                @click="showPassword = !showPassword"
+              >{{ showPassword ? '🙈' : '👁️' }}</span>
+            </div>
+            <!-- パスワード強度バー -->
+            <div v-if="form.password" class="strength-bar">
+              <div
+                v-for="i in 4" :key="i"
+                class="strength-segment"
+                :style="{ background: i <= passwordStrength.score ? passwordStrength.color : '#e0e0e0' }"
+              ></div>
+            </div>
+            <p v-if="form.password" class="strength-label" :style="{ color: passwordStrength.color }">
+              強度: {{ passwordStrength.label }}
+            </p>
+            <p v-if="touched.password && errors.password" class="error-text">{{ errors.password }}</p>
+            <p v-else class="helper-text">大文字・小文字・数字を含む8文字以上</p>
+          </div>
+
+          <!-- パスワード確認 -->
+          <div class="form-group">
+            <label>パスワード（確認） <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model="form.confirmPassword"
+                type="password"
+                :class="['form-input', fieldClass('confirmPassword')]"
+                placeholder="パスワードを再入力"
+                @blur="touch('confirmPassword')"
+              >
+              <span class="input-icon" v-if="touched.confirmPassword">{{ errors.confirmPassword ? '❌' : '✅' }}</span>
+            </div>
+            <p v-if="touched.confirmPassword && errors.confirmPassword" class="error-text">{{ errors.confirmPassword }}</p>
+          </div>
+
+          <!-- 自己紹介 -->
+          <div class="form-group">
+            <label>自己紹介</label>
+            <textarea
+              v-model="form.bio"
+              :class="['form-input', form.bio.length > 200 ? 'error' : '']"
+              rows="3"
+              placeholder="自由にどうぞ（200文字以内）"
+              style="resize: vertical;"
+            ></textarea>
+            <p class="char-counter" :style="{ color: form.bio.length > 200 ? '#e53935' : '#999' }">
+              {{ form.bio.length }} / 200
+            </p>
+          </div>
+
+          <!-- 利用規約 -->
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="agree" v-model="form.agreeToTerms">
+              <label for="agree" style="font-weight: normal; margin: 0; cursor: pointer;">
+                利用規約とプライバシーポリシーに同意します
+              </label>
+            </div>
+            <p v-if="touched.agreeToTerms && errors.agreeToTerms" class="error-text">{{ errors.agreeToTerms }}</p>
+          </div>
+
+          <button
+            type="submit"
+            :class="['submit-btn', isFormValid ? 'active' : 'disabled']"
+            :disabled="!isFormValid"
+          >
+            アカウントを作成
+          </button>
+        </form>
+      </template>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed } = Vue
+
+    createApp({
+      setup() {
+        const form = reactive({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          bio: '',
+          agreeToTerms: false,
+        })
+
+        const touched = reactive({
+          name: false, email: false, password: false,
+          confirmPassword: false, agreeToTerms: false,
+        })
+
+        const showPassword = ref(false)
+        const isSubmitted = ref(false)
+
+        const requiredFields = ['name', 'email', 'password', 'confirmPassword', 'agreeToTerms']
+
+        // ========================================
+        // computed でバリデーションルールをリアクティブに算出
+        // form の値が変わると自動で再計算される
+        // ========================================
+        const errors = computed(() => ({
+          name: !form.name ? '名前は必須です' : form.name.length < 2 ? '2文字以上で入力してください' : '',
+          email: !form.email ? 'メールは必須です' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) ? '正しい形式で入力してください' : '',
+          password: !form.password ? 'パスワードは必須です'
+            : form.password.length < 8 ? '8文字以上で入力してください'
+            : !/[A-Z]/.test(form.password) ? '大文字を含めてください'
+            : !/[a-z]/.test(form.password) ? '小文字を含めてください'
+            : !/[0-9]/.test(form.password) ? '数字を含めてください' : '',
+          confirmPassword: !form.confirmPassword ? 'パスワード確認は必須です'
+            : form.confirmPassword !== form.password ? 'パスワードが一致しません' : '',
+          agreeToTerms: !form.agreeToTerms ? '利用規約への同意が必要です' : '',
+        }))
+
+        const isFormValid = computed(() => {
+          return Object.values(errors.value).every(e => e === '') && form.bio.length <= 200
+        })
+
+        const passwordStrength = computed(() => {
+          const p = form.password
+          if (!p) return { score: 0, label: '', color: '#e0e0e0' }
+          let score = 0
+          if (p.length >= 8) score++
+          if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++
+          if (/[0-9]/.test(p)) score++
+          if (/[^A-Za-z0-9]/.test(p)) score++
+
+          const levels = [
+            { score: 0, label: '', color: '#e0e0e0' },
+            { score: 1, label: '弱い', color: '#e53935' },
+            { score: 2, label: '普通', color: '#fb8c00' },
+            { score: 3, label: '強い', color: '#43a047' },
+            { score: 4, label: 'とても強い', color: '#2e7d32' },
+          ]
+          return levels[score]
+        })
+
+        function touch(field) {
+          touched[field] = true
+        }
+
+        function fieldClass(field) {
+          if (!touched[field]) return ''
+          return errors.value[field] ? 'error' : 'valid'
+        }
+
+        function fieldCompleted(field) {
+          return !errors.value[field]
+        }
+
+        function handleSubmit() {
+          // 全フィールドをタッチ済みに
+          Object.keys(touched).forEach(k => touched[k] = true)
+          if (!isFormValid.value) return
+          isSubmitted.value = true
+        }
+
+        function resetForm() {
+          Object.assign(form, { name: '', email: '', password: '', confirmPassword: '', bio: '', agreeToTerms: false })
+          Object.keys(touched).forEach(k => touched[k] = false)
+          isSubmitted.value = false
+          showPassword.value = false
+        }
+
+        return {
+          form, touched, showPassword, isSubmitted, requiredFields,
+          errors, isFormValid, passwordStrength,
+          touch, fieldClass, fieldCompleted, handleSubmit, resetForm,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

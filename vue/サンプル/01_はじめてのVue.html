@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 はじめてのVue</title>
+  <!--
+    ========================================
+    学べる内容:
+    - Vueアプリの作り方（createApp）
+    - テンプレート構文（{{ }}）
+    - リアクティビティ（ref）
+    - ディレクティブ（v-bind, v-on, v-if, v-for）
+    - イベントハンドリング
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f5f5f5; color: #333; }
+    .app { max-width: 700px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #42b883, #35495e); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 24px; }
+    .header h1 { font-size: 28px; margin-bottom: 8px; }
+    .header p { opacity: 0.9; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .card h2 { color: #42b883; margin-bottom: 12px; font-size: 18px; }
+    .counter { text-align: center; }
+    .count-display { font-size: 64px; font-family: monospace; margin: 16px 0; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: transform 0.1s; margin: 4px; }
+    .btn:hover { transform: scale(1.05); }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary { background: #42b883; color: white; }
+    .btn-danger { background: #e74c3c; color: white; }
+    .btn-secondary { background: #95a5a6; color: white; }
+    .input-demo input { padding: 10px; border: 2px solid #ddd; border-radius: 8px; width: 100%; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    .input-demo input:focus { border-color: #42b883; }
+    .greeting { background: #e8f5e9; padding: 16px; border-radius: 8px; margin-top: 12px; }
+    .list-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .list-item:last-child { border-bottom: none; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+    .toggle-box { padding: 16px; background: #fff3cd; border-radius: 8px; margin-top: 12px; border-left: 4px solid #ffc107; }
+    .section-title { font-size: 16px; color: #555; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #42b883; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="app">
+      <!-- ヘッダー -->
+      <div class="header">
+        <h1>はじめてのVue.js</h1>
+        <p>リアクティビティと基本構文を学ぼう</p>
+      </div>
+
+      <!-- 1. テンプレート構文と双方向バインディング -->
+      <div class="card">
+        <h2>1. テンプレート構文 {{ '{{ }}' }}</h2>
+        <div class="input-demo">
+          <input v-model="name" placeholder="あなたの名前を入力...">
+          <!-- v-if: 条件付きレンダリング -->
+          <div v-if="name" class="greeting">
+            <p>こんにちは、<strong>{{ name }}</strong>さん！</p>
+            <p>文字数: {{ name.length }}文字</p>
+          </div>
+          <p v-else style="color: #999; margin-top: 8px;">名前を入力すると挨拶が表示されます</p>
+        </div>
+      </div>
+
+      <!-- 2. カウンター（リアクティビティの体験） -->
+      <div class="card">
+        <h2>2. カウンター（リアクティビティ）</h2>
+        <div class="counter">
+          <!-- v-bind: 属性のバインディング（:style は v-bind:style の省略形） -->
+          <div class="count-display" :style="{ color: count > 0 ? '#42b883' : count < 0 ? '#e74c3c' : '#999' }">
+            {{ count }}
+          </div>
+          <!-- v-on: イベントハンドリング（@click は v-on:click の省略形） -->
+          <div>
+            <button class="btn btn-danger" @click="count--">-1</button>
+            <button class="btn btn-secondary" @click="count = 0">リセット</button>
+            <button class="btn btn-primary" @click="count++">+1</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. v-for: リスト表示 -->
+      <div class="card">
+        <h2>3. リスト表示（v-for）</h2>
+
+        <!-- 入力欄 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input v-model="newSkill" @keyup.enter="addSkill" placeholder="スキルを追加..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+          <button class="btn btn-primary" @click="addSkill" style="padding: 8px 16px;">追加</button>
+        </div>
+
+        <!-- リスト -->
+        <div v-for="(skill, index) in skills" :key="skill.id" class="list-item">
+          <span>{{ index + 1 }}. {{ skill.name }}</span>
+          <div>
+            <span class="badge" :style="{ backgroundColor: levelColors[skill.level] || '#eee', color: 'white' }">
+              {{ skill.level }}
+            </span>
+            <button @click="removeSkill(index)" style="margin-left: 8px; background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 16px;">×</button>
+          </div>
+        </div>
+
+        <p v-if="skills.length === 0" style="text-align: center; color: #999; padding: 20px;">
+          スキルを追加してみましょう
+        </p>
+
+        <p style="color: #888; font-size: 13px; margin-top: 8px;">
+          {{ skills.length }} 個のスキル
+        </p>
+      </div>
+
+      <!-- 4. v-show と v-if の違い -->
+      <div class="card">
+        <h2>4. 表示切替（v-if と v-show）</h2>
+
+        <button class="btn btn-primary" @click="showMessage = !showMessage">
+          {{ showMessage ? '非表示にする' : '表示する' }}
+        </button>
+
+        <!-- v-if: DOMから完全に削除/追加される -->
+        <div v-if="showMessage" class="toggle-box">
+          <p><strong>v-if</strong>: この要素はDOMから削除/追加されます</p>
+        </div>
+
+        <!-- v-show: display: none で非表示（DOMには存在する） -->
+        <div v-show="showMessage" style="margin-top: 8px; padding: 16px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
+          <p><strong>v-show</strong>: display: none で非表示（DOMには存在し続ける）</p>
+        </div>
+      </div>
+
+      <!-- 5. 算出プロパティ -->
+      <div class="card">
+        <h2>5. 算出プロパティ（computed）</h2>
+        <input v-model="searchQuery" placeholder="スキルを検索..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px;">
+
+        <div v-for="skill in filteredSkills" :key="skill.id" class="list-item">
+          <span>{{ skill.name }}</span>
+          <span class="badge" :style="{ backgroundColor: levelColors[skill.level], color: 'white' }">
+            {{ skill.level }}
+          </span>
+        </div>
+
+        <p style="color: #888; font-size: 13px;">
+          {{ filteredSkills.length }} / {{ skills.length }} 件表示
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue
+
+    createApp({
+      setup() {
+        // ========================================
+        // ref: リアクティブな値を作成
+        // 値が変わると、テンプレートが自動的に再描画される
+        // ========================================
+        const name = ref('')
+        const count = ref(0)
+        const showMessage = ref(true)
+        const newSkill = ref('')
+        const searchQuery = ref('')
+
+        const skills = ref([
+          { id: 1, name: 'JavaScript', level: '上級' },
+          { id: 2, name: 'Vue.js', level: '中級' },
+          { id: 3, name: 'HTML/CSS', level: '上級' },
+          { id: 4, name: 'TypeScript', level: '初級' },
+        ])
+
+        const levelColors = {
+          '初級': '#42b883',
+          '中級': '#3498db',
+          '上級': '#e74c3c',
+        }
+
+        // ========================================
+        // computed: 依存する値が変わると自動で再計算
+        // ========================================
+        const filteredSkills = computed(() => {
+          if (!searchQuery.value) return skills.value
+          return skills.value.filter(skill =>
+            skill.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+          )
+        })
+
+        // 関数
+        function addSkill() {
+          if (!newSkill.value.trim()) return
+          skills.value.push({
+            id: Date.now(),
+            name: newSkill.value.trim(),
+            level: '初級',
+          })
+          newSkill.value = ''
+        }
+
+        function removeSkill(index) {
+          skills.value.splice(index, 1)
+        }
+
+        // テンプレートで使う値と関数を return
+        return {
+          name, count, showMessage, newSkill, searchQuery,
+          skills, levelColors, filteredSkills,
+          addSkill, removeSkill,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

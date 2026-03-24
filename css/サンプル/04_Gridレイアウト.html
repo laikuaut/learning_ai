@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04: CSS Gridレイアウト</title>
+  <!--
+    学べる内容:
+      - CSS Gridの基本概念
+      - grid-template-columns / grid-template-rows
+      - fr 単位（フラクション）
+      - gap（グリッド間の余白）
+      - grid-column / grid-row（セルの結合）
+      - grid-template-areas（名前付きエリア）
+      - repeat() / minmax() / auto-fill / auto-fit
+      - 実践的なレイアウトパターン
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #fa709a, #fee140);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #e74c3c;
+      margin-bottom: 10px;
+      font-size: 1.3em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    /* グリッドデモ用共通スタイル */
+    .grid-demo {
+      border: 2px dashed #bdc3c7;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    .grid-item {
+      background-color: #3498db;
+      color: white;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    .grid-item:nth-child(2)  { background-color: #2ecc71; }
+    .grid-item:nth-child(3)  { background-color: #e74c3c; }
+    .grid-item:nth-child(4)  { background-color: #f39c12; }
+    .grid-item:nth-child(5)  { background-color: #9b59b6; }
+    .grid-item:nth-child(6)  { background-color: #1abc9c; }
+    .grid-item:nth-child(7)  { background-color: #e67e22; }
+    .grid-item:nth-child(8)  { background-color: #2c3e50; }
+    .grid-item:nth-child(9)  { background-color: #c0392b; }
+
+    /* === 基本のグリッド === */
+    .grid-basic {
+      display: grid;
+      grid-template-columns: 200px 200px 200px;
+      gap: 10px;
+    }
+
+    /* === fr 単位 === */
+    .grid-fr {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 10px;
+    }
+
+    .grid-fr-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* === repeat() === */
+    .grid-repeat {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    /* === minmax() + auto-fill === */
+    .grid-auto-fill {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    /* === セルの結合 === */
+    .grid-span {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto auto;
+      gap: 10px;
+    }
+
+    .grid-span .span-col2 {
+      grid-column: span 2;
+      background-color: #8e44ad;
+    }
+
+    .grid-span .span-row2 {
+      grid-row: span 2;
+      background-color: #16a085;
+    }
+
+    .grid-span .span-both {
+      grid-column: 2 / 4;
+      grid-row: 2 / 4;
+      background-color: #d35400;
+    }
+
+    /* === grid-template-areas === */
+    .grid-areas {
+      display: grid;
+      grid-template-areas:
+        "header header header"
+        "sidebar main main"
+        "sidebar main main"
+        "footer footer footer";
+      grid-template-columns: 200px 1fr 1fr;
+      grid-template-rows: auto 1fr 1fr auto;
+      gap: 10px;
+      min-height: 300px;
+    }
+
+    .area-header  { grid-area: header;  background-color: #2c3e50; }
+    .area-sidebar { grid-area: sidebar; background-color: #3498db; }
+    .area-main    { grid-area: main;    background-color: #2ecc71; }
+    .area-footer  { grid-area: footer;  background-color: #e74c3c; }
+
+    /* === ダッシュボードレイアウト === */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: auto auto;
+      gap: 15px;
+    }
+
+    .dashboard .stat-card {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .dashboard .stat-card .number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .dashboard .stat-card .label {
+      color: #7f8c8d;
+      font-size: 0.9em;
+    }
+
+    .dashboard .chart-card {
+      grid-column: span 2;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .dashboard .chart-card h4 {
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+
+    .chart-placeholder {
+      background: linear-gradient(135deg, #667eea33, #764ba233);
+      height: 120px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+    }
+
+    /* === 画像ギャラリー === */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .gallery-item {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+
+    .gallery-item:nth-child(1)  { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .gallery-item:nth-child(2)  { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .gallery-item:nth-child(3)  { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+    .gallery-item:nth-child(4)  { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+    .gallery-item:nth-child(5)  { background: linear-gradient(135deg, #fa709a, #fee140); }
+    .gallery-item:nth-child(6)  { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+  </style>
+</head>
+<body>
+  <h1>CSS Gridレイアウト サンプル</h1>
+
+  <!-- 基本のグリッド -->
+  <div class="section">
+    <h2>1. 基本のグリッド</h2>
+    <p><code>grid-template-columns: 200px 200px 200px</code>（固定幅3列）</p>
+    <div class="grid-demo grid-basic">
+      <div class="grid-item">1</div>
+      <div class="grid-item">2</div>
+      <div class="grid-item">3</div>
+      <div class="grid-item">4</div>
+      <div class="grid-item">5</div>
+      <div class="grid-item">6</div>
+    </div>
+  </div>
+
+  <!-- fr 単位 -->
+  <div class="section">
+    <h2>2. fr 単位（フラクション）</h2>
+    <p><code>grid-template-columns: 1fr 2fr 1fr</code>（中央が2倍の幅）</p>
+    <div class="grid-demo grid-fr">
+      <div class="grid-item">1fr</div>
+      <div class="grid-item">2fr</div>
+      <div class="grid-item">1fr</div>
+    </div>
+
+    <p><code>grid-template-columns: 1fr 1fr 1fr</code>（等幅3列）</p>
+    <div class="grid-demo grid-fr-equal">
+      <div class="grid-item">1fr</div>
+      <div class="grid-item">1fr</div>
+      <div class="grid-item">1fr</div>
+    </div>
+  </div>
+
+  <!-- repeat() -->
+  <div class="section">
+    <h2>3. repeat() 関数</h2>
+    <p><code>grid-template-columns: repeat(4, 1fr)</code>（4等分）</p>
+    <div class="grid-demo grid-repeat">
+      <div class="grid-item">1</div>
+      <div class="grid-item">2</div>
+      <div class="grid-item">3</div>
+      <div class="grid-item">4</div>
+      <div class="grid-item">5</div>
+      <div class="grid-item">6</div>
+      <div class="grid-item">7</div>
+      <div class="grid-item">8</div>
+    </div>
+  </div>
+
+  <!-- auto-fill + minmax -->
+  <div class="section">
+    <h2>4. auto-fill + minmax()（レスポンシブ）</h2>
+    <p><code>repeat(auto-fill, minmax(150px, 1fr))</code> — ウィンドウ幅に応じて列数が自動調整されます。</p>
+    <div class="grid-demo grid-auto-fill">
+      <div class="grid-item">A</div>
+      <div class="grid-item">B</div>
+      <div class="grid-item">C</div>
+      <div class="grid-item">D</div>
+      <div class="grid-item">E</div>
+      <div class="grid-item">F</div>
+    </div>
+  </div>
+
+  <!-- セルの結合 -->
+  <div class="section">
+    <h2>5. セルの結合（span）</h2>
+    <div class="grid-demo grid-span">
+      <div class="grid-item span-col2">grid-column: span 2</div>
+      <div class="grid-item">3</div>
+      <div class="grid-item span-row2">grid-row:<br>span 2</div>
+      <div class="grid-item span-both">grid-column: 2/4<br>grid-row: 2/4</div>
+    </div>
+  </div>
+
+  <!-- grid-template-areas -->
+  <div class="section">
+    <h2>6. grid-template-areas（名前付きエリア）</h2>
+    <p>エリア名でレイアウトを直感的に定義できます。</p>
+    <div class="grid-demo grid-areas">
+      <div class="grid-item area-header">header</div>
+      <div class="grid-item area-sidebar">sidebar</div>
+      <div class="grid-item area-main">main</div>
+      <div class="grid-item area-footer">footer</div>
+    </div>
+    <p><small>
+      <code>grid-template-areas: "header header header" "sidebar main main" "footer footer footer";</code>
+    </small></p>
+  </div>
+
+  <!-- ダッシュボード -->
+  <div class="section">
+    <h2>7. 実践: ダッシュボードレイアウト</h2>
+    <div class="dashboard">
+      <div class="stat-card">
+        <div class="number">1,234</div>
+        <div class="label">ユーザー数</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">567</div>
+        <div class="label">注文数</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">89%</div>
+        <div class="label">達成率</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">4.8</div>
+        <div class="label">評価</div>
+      </div>
+      <div class="chart-card">
+        <h4>売上推移</h4>
+        <div class="chart-placeholder">グラフ表示エリア</div>
+      </div>
+      <div class="chart-card">
+        <h4>カテゴリ別</h4>
+        <div class="chart-placeholder">グラフ表示エリア</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像ギャラリー -->
+  <div class="section">
+    <h2>8. 実践: 画像ギャラリー</h2>
+    <p><code>auto-fit + minmax</code> で自動的にカラム数を調整する正方形ギャラリーです。</p>
+    <div class="gallery">
+      <div class="gallery-item">Photo 1</div>
+      <div class="gallery-item">Photo 2</div>
+      <div class="gallery-item">Photo 3</div>
+      <div class="gallery-item">Photo 4</div>
+      <div class="gallery-item">Photo 5</div>
+      <div class="gallery-item">Photo 6</div>
+    </div>
+  </div>
+</body>
+</html>

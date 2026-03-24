@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストップウォッチ</title>
+  <!--
+    ==============================
+    ストップウォッチ
+    第4章・第9章の総合サンプル
+    ==============================
+    学べる内容:
+      - setInterval / clearInterval（タイマー処理）
+      - Date オブジェクトと時間計算
+      - 関数とクロージャ
+      - イベント処理
+      - 配列の操作（ラップタイム記録）
+      - テンプレートリテラルによる表示
+    実行方法:
+      ブラウザでこのファイルを開くだけで動作します
+    ==============================
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .stopwatch {
+      background: #16213e;
+      border-radius: 24px;
+      padding: 40px;
+      width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .title {
+      color: #7f8c8d;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+    .display {
+      font-family: 'Courier New', monospace;
+      font-size: 3.5rem;
+      font-weight: bold;
+      color: #ecf0f1;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+    .display .ms {
+      font-size: 2rem;
+      color: #e94560;
+    }
+    .status {
+      color: #7f8c8d;
+      font-size: 0.85rem;
+      margin-bottom: 32px;
+      min-height: 1.2em;
+    }
+    .status.running { color: #27ae60; }
+    .status.paused { color: #f39c12; }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .btn {
+      width: 80px;
+      height: 80px;
+      border: none;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-start {
+      background: #27ae60;
+      color: white;
+    }
+    .btn-start:hover { background: #219653; }
+    .btn-stop {
+      background: #e74c3c;
+      color: white;
+    }
+    .btn-stop:hover { background: #c0392b; }
+    .btn-lap {
+      background: #3498db;
+      color: white;
+    }
+    .btn-lap:hover { background: #2980b9; }
+    .btn-reset {
+      background: #533483;
+      color: white;
+    }
+    .btn-reset:hover { background: #6c3fa5; }
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .laps {
+      max-height: 250px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .laps-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      color: #7f8c8d;
+      font-size: 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 12px;
+      color: #bdc3c7;
+      font-size: 0.9rem;
+      font-family: 'Courier New', monospace;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.2s;
+    }
+    .lap-item:hover { background: rgba(255,255,255,0.03); }
+    .lap-item .lap-number { color: #7f8c8d; }
+    .lap-item .lap-split { color: #e94560; }
+    .lap-item.fastest .lap-time { color: #27ae60; }
+    .lap-item.slowest .lap-time { color: #e74c3c; }
+    .no-laps {
+      color: #555;
+      font-size: 0.85rem;
+      padding: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="stopwatch">
+    <div class="title">ストップウォッチ</div>
+    <div class="display" id="display">00:00:00<span class="ms">.00</span></div>
+    <div class="status" id="status"></div>
+
+    <div class="buttons">
+      <button class="btn btn-start" id="startBtn">開始</button>
+      <button class="btn btn-stop" id="stopBtn" disabled>停止</button>
+      <button class="btn btn-lap" id="lapBtn" disabled>ラップ</button>
+      <button class="btn btn-reset" id="resetBtn" disabled>リセット</button>
+    </div>
+
+    <div class="laps" id="lapsContainer">
+      <div class="no-laps">ラップタイムがここに表示されます</div>
+    </div>
+  </div>
+
+  <script>
+    // --- 状態管理 ---
+    let isRunning = false;
+    let startTime = 0;       // 開始時刻
+    let elapsedTime = 0;     // 経過時間（ミリ秒）
+    let intervalId = null;    // setInterval の ID
+    let laps = [];            // ラップタイムの配列
+    let lastLapTime = 0;     // 前回のラップ時刻
+
+    // --- DOM要素 ---
+    const display = document.getElementById("display");
+    const status = document.getElementById("status");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const lapBtn = document.getElementById("lapBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const lapsContainer = document.getElementById("lapsContainer");
+
+    // --- ミリ秒を表示形式に変換する関数 ---
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const centiseconds = Math.floor((ms % 1000) / 10);
+
+      const hh = String(hours).padStart(2, "0");
+      const mm = String(minutes).padStart(2, "0");
+      const ss = String(seconds).padStart(2, "0");
+      const cs = String(centiseconds).padStart(2, "0");
+
+      return { hh, mm, ss, cs, full: `${hh}:${mm}:${ss}.${cs}` };
+    }
+
+    // --- 表示を更新する関数 ---
+    function updateDisplay() {
+      const currentElapsed = isRunning
+        ? elapsedTime + (Date.now() - startTime)
+        : elapsedTime;
+
+      const { hh, mm, ss, cs } = formatTime(currentElapsed);
+      display.innerHTML = `${hh}:${mm}:${ss}<span class="ms">.${cs}</span>`;
+    }
+
+    // --- ラップ一覧を更新する関数 ---
+    function updateLaps() {
+      if (laps.length === 0) {
+        lapsContainer.innerHTML = '<div class="no-laps">ラップタイムがここに表示されます</div>';
+        return;
+      }
+
+      // 最速・最遅のラップを見つける（2つ以上のラップがある場合）
+      let fastestIdx = -1;
+      let slowestIdx = -1;
+
+      if (laps.length >= 2) {
+        const splitTimes = laps.map(l => l.split);
+        const minSplit = Math.min(...splitTimes);
+        const maxSplit = Math.max(...splitTimes);
+        fastestIdx = splitTimes.indexOf(minSplit);
+        slowestIdx = splitTimes.indexOf(maxSplit);
+      }
+
+      let html = `
+        <div class="laps-header">
+          <span>ラップ</span>
+          <span>スプリット</span>
+          <span>経過時間</span>
+        </div>
+      `;
+
+      // 新しいラップが上に来るように逆順で表示
+      for (let i = laps.length - 1; i >= 0; i--) {
+        const lap = laps[i];
+        let className = "lap-item";
+        if (i === fastestIdx) className += " fastest";
+        if (i === slowestIdx) className += " slowest";
+
+        html += `
+          <div class="${className}">
+            <span class="lap-number">#${lap.number}</span>
+            <span class="lap-split">${formatTime(lap.split).full}</span>
+            <span class="lap-time">${formatTime(lap.total).full}</span>
+          </div>
+        `;
+      }
+
+      lapsContainer.innerHTML = html;
+    }
+
+    // --- 開始 ---
+    function start() {
+      isRunning = true;
+      startTime = Date.now();
+
+      // 10msごとに表示を更新
+      intervalId = setInterval(updateDisplay, 10);
+
+      // ボタンの状態更新
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      lapBtn.disabled = false;
+      resetBtn.disabled = true;
+
+      status.textContent = "計測中...";
+      status.className = "status running";
+    }
+
+    // --- 停止 ---
+    function stop() {
+      isRunning = false;
+      elapsedTime += Date.now() - startTime;
+      clearInterval(intervalId);
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      lapBtn.disabled = true;
+      resetBtn.disabled = false;
+
+      status.textContent = "停止中";
+      status.className = "status paused";
+    }
+
+    // --- ラップ ---
+    function recordLap() {
+      if (!isRunning) return;
+
+      const currentTotal = elapsedTime + (Date.now() - startTime);
+      const splitTime = currentTotal - lastLapTime;
+
+      laps.push({
+        number: laps.length + 1,
+        total: currentTotal,
+        split: splitTime
+      });
+
+      lastLapTime = currentTotal;
+      updateLaps();
+    }
+
+    // --- リセット ---
+    function reset() {
+      isRunning = false;
+      elapsedTime = 0;
+      startTime = 0;
+      lastLapTime = 0;
+      laps = [];
+      clearInterval(intervalId);
+
+      display.innerHTML = '00:00:00<span class="ms">.00</span>';
+      status.textContent = "";
+      status.className = "status";
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      lapBtn.disabled = true;
+      resetBtn.disabled = true;
+
+      updateLaps();
+    }
+
+    // --- イベント登録 ---
+    startBtn.addEventListener("click", start);
+    stopBtn.addEventListener("click", stop);
+    lapBtn.addEventListener("click", recordLap);
+    resetBtn.addEventListener("click", reset);
+
+    // キーボードショートカット
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (isRunning) stop();
+        else if (elapsedTime > 0 || startTime > 0) start();
+        else start();
+      } else if (e.key === "l" && isRunning) {
+        recordLap();
+      } else if (e.key === "r" && !isRunning) {
+        reset();
+      }
+    });
+  </script>
+</body>
+</html>

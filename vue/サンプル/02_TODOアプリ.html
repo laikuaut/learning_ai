@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 TODOアプリ</title>
+  <!--
+    ========================================
+    学べる内容:
+    - v-model による双方向バインディング
+    - v-for によるリスト表示
+    - イベントハンドリング（@click, @keyup.enter）
+    - 算出プロパティ（computed）
+    - CRUD操作（作成・読取・更新・削除）
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #667eea; min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
+    .app { width: 100%; max-width: 550px; }
+    .header { text-align: center; color: white; margin-bottom: 24px; }
+    .header h1 { font-size: 32px; margin-bottom: 4px; }
+    .header p { opacity: 0.8; }
+    .todo-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .input-area { display: flex; gap: 8px; padding: 20px; background: #f8f9fa; }
+    .input-area input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    .input-area input:focus { border-color: #667eea; }
+    .input-area button { padding: 12px 24px; border: none; border-radius: 10px; background: #667eea; color: white; font-size: 15px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .input-area button:hover { background: #5a67d8; }
+    .filters { display: flex; gap: 4px; padding: 12px 20px; border-bottom: 1px solid #f0f0f0; }
+    .filter-btn { padding: 6px 16px; border: none; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.2s; background: transparent; color: #888; }
+    .filter-btn.active { background: #667eea; color: white; }
+    .filter-btn:hover:not(.active) { background: #f0f0f0; }
+    .todo-list { list-style: none; }
+    .todo-item { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; transition: background 0.2s; }
+    .todo-item:hover { background: #fafafa; }
+    .custom-checkbox { position: relative; width: 22px; height: 22px; }
+    .custom-checkbox input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; }
+    .custom-checkbox .checkmark { width: 22px; height: 22px; border: 2px solid #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .custom-checkbox input:checked + .checkmark { background: #667eea; border-color: #667eea; }
+    .custom-checkbox input:checked + .checkmark::after { content: '✓'; color: white; font-size: 12px; }
+    .todo-text { flex: 1; font-size: 15px; transition: all 0.3s; word-break: break-all; }
+    .todo-text.done { text-decoration: line-through; color: #bbb; }
+    .edit-input { flex: 1; padding: 6px 10px; border: 2px solid #667eea; border-radius: 6px; font-size: 15px; outline: none; }
+    .action-btn { padding: 4px 10px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .btn-edit { background: #f0f0f0; color: #666; }
+    .btn-edit:hover { background: #e0e0e0; }
+    .btn-del { background: #fff0f0; color: #e74c3c; }
+    .btn-del:hover { background: #ffe0e0; }
+    .btn-save { background: #e8f5e9; color: #2e7d32; }
+    .btn-cancel { background: #f0f0f0; color: #666; }
+    .footer { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; color: #999; font-size: 13px; background: #fafafa; }
+    .clear-btn { background: none; border: 1px solid #ddd; padding: 4px 12px; border-radius: 6px; color: #999; font-size: 12px; cursor: pointer; }
+    .clear-btn:hover { background: #f0f0f0; }
+    .empty { text-align: center; padding: 40px 20px; color: #ccc; }
+    .empty-icon { font-size: 48px; margin-bottom: 8px; }
+    .progress { padding: 0 20px 12px; }
+    .progress-bar { height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #667eea; transition: width 0.3s; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="app">
+      <div class="header">
+        <h1>TODO</h1>
+        <p>Vue.js で作るタスク管理アプリ</p>
+      </div>
+
+      <div class="todo-card">
+        <!-- 入力 -->
+        <div class="input-area">
+          <input
+            v-model="newTodo"
+            @keyup.enter="addTodo"
+            placeholder="新しいタスクを入力..."
+          >
+          <button @click="addTodo">追加</button>
+        </div>
+
+        <!-- 進捗バー -->
+        <div class="progress" v-if="todos.length > 0">
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+          </div>
+          <p style="font-size: 12px; color: #999; margin-top: 4px; text-align: right;">
+            {{ completedCount }} / {{ todos.length }} 完了 ({{ progressPercent }}%)
+          </p>
+        </div>
+
+        <!-- フィルター -->
+        <div class="filters">
+          <button
+            v-for="f in filterOptions"
+            :key="f.value"
+            :class="['filter-btn', { active: filter === f.value }]"
+            @click="filter = f.value"
+          >
+            {{ f.label }}
+          </button>
+        </div>
+
+        <!-- タスクリスト -->
+        <ul class="todo-list" v-if="filteredTodos.length > 0">
+          <li v-for="todo in filteredTodos" :key="todo.id" class="todo-item">
+            <!-- チェックボックス -->
+            <label class="custom-checkbox">
+              <input type="checkbox" :checked="todo.done" @change="toggleTodo(todo.id)">
+              <span class="checkmark"></span>
+            </label>
+
+            <!-- 編集モード -->
+            <template v-if="editingId === todo.id">
+              <input
+                class="edit-input"
+                v-model="editText"
+                @keyup.enter="saveEdit(todo.id)"
+                @keyup.escape="cancelEdit"
+                ref="editInput"
+              >
+              <button class="action-btn btn-save" @click="saveEdit(todo.id)">保存</button>
+              <button class="action-btn btn-cancel" @click="cancelEdit">取消</button>
+            </template>
+
+            <!-- 表示モード -->
+            <template v-else>
+              <span :class="['todo-text', { done: todo.done }]" @dblclick="startEdit(todo)">
+                {{ todo.text }}
+              </span>
+              <button class="action-btn btn-edit" @click="startEdit(todo)">編集</button>
+              <button class="action-btn btn-del" @click="removeTodo(todo.id)">削除</button>
+            </template>
+          </li>
+        </ul>
+
+        <!-- 空の場合 -->
+        <div v-else class="empty">
+          <div class="empty-icon">{{ filter === 'done' ? '🎯' : '📋' }}</div>
+          <p>{{ emptyMessage }}</p>
+        </div>
+
+        <!-- フッター -->
+        <div class="footer" v-if="todos.length > 0">
+          <span>残り {{ activeCount }} 件</span>
+          <button v-if="completedCount > 0" class="clear-btn" @click="clearCompleted">
+            完了済みを削除
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue
+
+    createApp({
+      setup() {
+        // state
+        const todos = ref([
+          { id: 1, text: 'Vue.js の基本を学ぶ', done: true },
+          { id: 2, text: 'TODOアプリを作る', done: false },
+          { id: 3, text: 'コンポーネントを理解する', done: false },
+        ])
+        const newTodo = ref('')
+        const filter = ref('all')
+        const editingId = ref(null)
+        const editText = ref('')
+
+        const filterOptions = [
+          { value: 'all', label: 'すべて' },
+          { value: 'active', label: '未完了' },
+          { value: 'done', label: '完了済み' },
+        ]
+
+        // computed（算出プロパティ）
+        const filteredTodos = computed(() => {
+          if (filter.value === 'active') return todos.value.filter(t => !t.done)
+          if (filter.value === 'done') return todos.value.filter(t => t.done)
+          return todos.value
+        })
+
+        const activeCount = computed(() => todos.value.filter(t => !t.done).length)
+        const completedCount = computed(() => todos.value.filter(t => t.done).length)
+        const progressPercent = computed(() => {
+          if (todos.value.length === 0) return 0
+          return Math.round((completedCount.value / todos.value.length) * 100)
+        })
+
+        const emptyMessage = computed(() => {
+          if (filter.value === 'done') return '完了したタスクはありません'
+          if (filter.value === 'active') return 'すべて完了しました！'
+          return 'タスクを追加してみましょう'
+        })
+
+        // methods
+        function addTodo() {
+          if (!newTodo.value.trim()) return
+          todos.value.push({
+            id: Date.now(),
+            text: newTodo.value.trim(),
+            done: false,
+          })
+          newTodo.value = ''
+        }
+
+        function toggleTodo(id) {
+          const todo = todos.value.find(t => t.id === id)
+          if (todo) todo.done = !todo.done
+        }
+
+        function removeTodo(id) {
+          todos.value = todos.value.filter(t => t.id !== id)
+        }
+
+        function startEdit(todo) {
+          editingId.value = todo.id
+          editText.value = todo.text
+        }
+
+        function saveEdit(id) {
+          if (!editText.value.trim()) return
+          const todo = todos.value.find(t => t.id === id)
+          if (todo) todo.text = editText.value.trim()
+          editingId.value = null
+        }
+
+        function cancelEdit() {
+          editingId.value = null
+        }
+
+        function clearCompleted() {
+          todos.value = todos.value.filter(t => !t.done)
+        }
+
+        return {
+          todos, newTodo, filter, editingId, editText, filterOptions,
+          filteredTodos, activeCount, completedCount, progressPercent, emptyMessage,
+          addTodo, toggleTodo, removeTodo, startEdit, saveEdit, cancelEdit, clearCompleted,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

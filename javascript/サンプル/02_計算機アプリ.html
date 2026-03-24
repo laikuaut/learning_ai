@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>計算機アプリ</title>
+  <!--
+    ==============================
+    計算機アプリ
+    第2章・第3章・第4章の総合サンプル
+    ==============================
+    学べる内容:
+      - 算術演算子（+, -, *, /, %）
+      - 条件分岐（if, switch）
+      - 関数の定義と呼び出し
+      - イベント処理（click, keydown）
+      - DOM操作（テキスト更新、クラス操作）
+    実行方法:
+      ブラウザでこのファイルを開くだけで動作します
+    ==============================
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .calculator {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      width: 320px;
+    }
+    .display {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: right;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .display .expression {
+      color: #7f8c8d;
+      font-size: 0.9rem;
+      min-height: 1.2em;
+      word-break: break-all;
+    }
+    .display .current {
+      color: #e94560;
+      font-size: 2.2rem;
+      font-weight: bold;
+      word-break: break-all;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .btn {
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-number {
+      background: #1a1a40;
+      color: #ecf0f1;
+    }
+    .btn-number:hover { background: #2d2d5e; }
+    .btn-operator {
+      background: #e94560;
+      color: white;
+    }
+    .btn-operator:hover { background: #c0392b; }
+    .btn-function {
+      background: #533483;
+      color: white;
+    }
+    .btn-function:hover { background: #6c3fa5; }
+    .btn-equals {
+      background: #27ae60;
+      color: white;
+      grid-column: span 2;
+    }
+    .btn-equals:hover { background: #219653; }
+    .btn-zero {
+      grid-column: span 2;
+    }
+    .history {
+      margin-top: 16px;
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .history-title {
+      color: #7f8c8d;
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+    .history-item {
+      color: #bdc3c7;
+      font-size: 0.85rem;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="current" id="current">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn btn-function" data-action="clear">AC</button>
+      <button class="btn btn-function" data-action="sign">+/-</button>
+      <button class="btn btn-function" data-action="percent">%</button>
+      <button class="btn btn-operator" data-action="operator" data-value="/">÷</button>
+
+      <button class="btn btn-number" data-action="number" data-value="7">7</button>
+      <button class="btn btn-number" data-action="number" data-value="8">8</button>
+      <button class="btn btn-number" data-action="number" data-value="9">9</button>
+      <button class="btn btn-operator" data-action="operator" data-value="*">×</button>
+
+      <button class="btn btn-number" data-action="number" data-value="4">4</button>
+      <button class="btn btn-number" data-action="number" data-value="5">5</button>
+      <button class="btn btn-number" data-action="number" data-value="6">6</button>
+      <button class="btn btn-operator" data-action="operator" data-value="-">-</button>
+
+      <button class="btn btn-number" data-action="number" data-value="1">1</button>
+      <button class="btn btn-number" data-action="number" data-value="2">2</button>
+      <button class="btn btn-number" data-action="number" data-value="3">3</button>
+      <button class="btn btn-operator" data-action="operator" data-value="+">+</button>
+
+      <button class="btn btn-number btn-zero" data-action="number" data-value="0">0</button>
+      <button class="btn btn-number" data-action="decimal">.</button>
+      <button class="btn btn-equals" data-action="equals">=</button>
+    </div>
+    <div class="history">
+      <div class="history-title">計算履歴</div>
+      <div id="history"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- 計算機の状態管理 ---
+    const state = {
+      current: "0",          // 現在表示中の数値
+      previous: null,        // 前の数値
+      operator: null,        // 選択中の演算子
+      waitingForOperand: false, // 次の数値入力待ちか
+      expression: ""         // 式の表示
+    };
+
+    // --- DOM要素 ---
+    const currentDisplay = document.getElementById("current");
+    const expressionDisplay = document.getElementById("expression");
+    const historyContainer = document.getElementById("history");
+
+    // --- 表示を更新する関数 ---
+    function updateDisplay() {
+      // 長い数値は省略表示
+      let displayValue = state.current;
+      if (displayValue.length > 12) {
+        displayValue = parseFloat(displayValue).toPrecision(10);
+      }
+      currentDisplay.textContent = displayValue;
+      expressionDisplay.textContent = state.expression;
+    }
+
+    // --- 計算を実行する関数 ---
+    function calculate(a, operator, b) {
+      const numA = parseFloat(a);
+      const numB = parseFloat(b);
+
+      switch (operator) {
+        case "+": return numA + numB;
+        case "-": return numA - numB;
+        case "*": return numA * numB;
+        case "/":
+          if (numB === 0) return "Error";
+          return numA / numB;
+        default: return numB;
+      }
+    }
+
+    // --- 演算子の表示用変換 ---
+    function operatorSymbol(op) {
+      const symbols = { "+": "+", "-": "-", "*": "×", "/": "÷" };
+      return symbols[op] || op;
+    }
+
+    // --- 履歴に追加する関数 ---
+    function addToHistory(expression, result) {
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.textContent = `${expression} = ${result}`;
+      historyContainer.prepend(item);
+
+      // 最大10件まで
+      while (historyContainer.children.length > 10) {
+        historyContainer.lastChild.remove();
+      }
+    }
+
+    // --- 数字ボタンの処理 ---
+    function inputNumber(digit) {
+      if (state.waitingForOperand) {
+        state.current = digit;
+        state.waitingForOperand = false;
+      } else {
+        state.current = state.current === "0" ? digit : state.current + digit;
+      }
+      updateDisplay();
+    }
+
+    // --- 小数点の処理 ---
+    function inputDecimal() {
+      if (state.waitingForOperand) {
+        state.current = "0.";
+        state.waitingForOperand = false;
+      } else if (!state.current.includes(".")) {
+        state.current += ".";
+      }
+      updateDisplay();
+    }
+
+    // --- 演算子の処理 ---
+    function inputOperator(operator) {
+      const current = parseFloat(state.current);
+
+      if (state.previous !== null && !state.waitingForOperand) {
+        const result = calculate(state.previous, state.operator, state.current);
+        state.current = String(result);
+        state.previous = result;
+      } else {
+        state.previous = current;
+      }
+
+      state.operator = operator;
+      state.waitingForOperand = true;
+      state.expression = `${state.previous} ${operatorSymbol(operator)}`;
+      updateDisplay();
+    }
+
+    // --- イコールの処理 ---
+    function inputEquals() {
+      if (state.previous === null || state.operator === null) return;
+
+      const expression = `${state.previous} ${operatorSymbol(state.operator)} ${state.current}`;
+      const result = calculate(state.previous, state.operator, state.current);
+
+      addToHistory(expression, result);
+
+      state.current = String(result);
+      state.expression = `${expression} =`;
+      state.previous = null;
+      state.operator = null;
+      state.waitingForOperand = true;
+      updateDisplay();
+    }
+
+    // --- クリアの処理 ---
+    function clearAll() {
+      state.current = "0";
+      state.previous = null;
+      state.operator = null;
+      state.waitingForOperand = false;
+      state.expression = "";
+      updateDisplay();
+    }
+
+    // --- 符号反転 ---
+    function toggleSign() {
+      state.current = String(-parseFloat(state.current));
+      updateDisplay();
+    }
+
+    // --- パーセント ---
+    function inputPercent() {
+      state.current = String(parseFloat(state.current) / 100);
+      updateDisplay();
+    }
+
+    // --- ボタンクリックイベント（イベント委譲） ---
+    document.querySelector(".buttons").addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn");
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const value = btn.dataset.value;
+
+      switch (action) {
+        case "number":   inputNumber(value); break;
+        case "decimal":  inputDecimal(); break;
+        case "operator": inputOperator(value); break;
+        case "equals":   inputEquals(); break;
+        case "clear":    clearAll(); break;
+        case "sign":     toggleSign(); break;
+        case "percent":  inputPercent(); break;
+      }
+    });
+
+    // --- キーボードサポート ---
+    document.addEventListener("keydown", (e) => {
+      if (e.key >= "0" && e.key <= "9") inputNumber(e.key);
+      else if (e.key === ".") inputDecimal();
+      else if (e.key === "+") inputOperator("+");
+      else if (e.key === "-") inputOperator("-");
+      else if (e.key === "*") inputOperator("*");
+      else if (e.key === "/") { e.preventDefault(); inputOperator("/"); }
+      else if (e.key === "Enter" || e.key === "=") inputEquals();
+      else if (e.key === "Escape") clearAll();
+      else if (e.key === "Backspace") {
+        if (state.current.length > 1) {
+          state.current = state.current.slice(0, -1);
+        } else {
+          state.current = "0";
+        }
+        updateDisplay();
+      }
+    });
+  </script>
+</body>
+</html>

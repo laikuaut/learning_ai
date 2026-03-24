@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>07: CSSカスタムプロパティ（CSS変数）</title>
+  <!--
+    学べる内容:
+      - CSSカスタムプロパティ（CSS変数）の宣言と使用
+      - :root でのグローバル変数定義
+      - var() 関数とフォールバック値
+      - スコープ（ローカル変数）
+      - JavaScriptからの変数操作
+      - テーマ切り替え（ライト/ダーク）の実装
+      - デザイントークンの管理パターン
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください。テーマ切り替えボタンを試してみましょう。
+  -->
+  <style>
+    /* === グローバル変数の定義 === */
+    :root {
+      /* カラーパレット */
+      --color-primary: #3498db;
+      --color-primary-dark: #2980b9;
+      --color-secondary: #2ecc71;
+      --color-accent: #e74c3c;
+      --color-warning: #f39c12;
+
+      /* テーマカラー（テーマ切り替え用） */
+      --bg-color: #f5f5f5;
+      --bg-card: #ffffff;
+      --text-color: #333333;
+      --text-muted: #666666;
+      --border-color: #dddddd;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+
+      /* スペーシング */
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+
+      /* ボーダー */
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+
+      /* フォント */
+      --font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      --font-size-sm: 0.85rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.25rem;
+      --font-size-xl: 1.5rem;
+      --font-size-2xl: 2rem;
+
+      /* トランジション */
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.3s ease;
+      --transition-slow: 0.5s ease;
+    }
+
+    /* === ダークテーマ === */
+    [data-theme="dark"] {
+      --bg-color: #1a1a2e;
+      --bg-card: #16213e;
+      --text-color: #e0e0e0;
+      --text-muted: #a0a0a0;
+      --border-color: #2a2a4a;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    /* === 基本スタイル === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      padding: var(--spacing-lg);
+      transition: background-color var(--transition-normal),
+                  color var(--transition-normal);
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--color-primary), #764ba2);
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--spacing-xl);
+      font-size: var(--font-size-xl);
+    }
+
+    h2 {
+      color: var(--color-primary);
+      margin-bottom: var(--spacing-md);
+      font-size: var(--font-size-lg);
+    }
+
+    .section {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+      box-shadow: 0 2px 4px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      transition: background-color var(--transition-normal),
+                  border-color var(--transition-normal);
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: var(--border-color);
+      padding: 1px 6px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+    }
+
+    /* === テーマ切り替えボタン === */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-size: var(--font-size-base);
+      font-weight: bold;
+      z-index: 100;
+      transition: background-color var(--transition-fast);
+      box-shadow: 0 2px 8px var(--shadow-color);
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--color-primary-dark);
+    }
+
+    /* === カラーパレット表示 === */
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+    }
+
+    .palette-item {
+      width: 120px;
+      height: 80px;
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: var(--font-size-sm);
+      font-weight: bold;
+    }
+
+    .palette-item.primary   { background-color: var(--color-primary); }
+    .palette-item.secondary { background-color: var(--color-secondary); }
+    .palette-item.accent    { background-color: var(--color-accent); }
+    .palette-item.warning   { background-color: var(--color-warning); }
+
+    /* === ローカルスコープのデモ === */
+    .card-blue {
+      --card-color: var(--color-primary);
+      --card-bg: #d4e6f1;
+    }
+
+    .card-green {
+      --card-color: var(--color-secondary);
+      --card-bg: #d5f5e3;
+    }
+
+    .card-red {
+      --card-color: var(--color-accent);
+      --card-bg: #fadbd8;
+    }
+
+    .scoped-card {
+      background-color: var(--card-bg);
+      border-left: 4px solid var(--card-color);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .scoped-card h4 {
+      color: var(--card-color);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    [data-theme="dark"] .card-blue { --card-bg: #1a3a5c; }
+    [data-theme="dark"] .card-green { --card-bg: #1a4a2c; }
+    [data-theme="dark"] .card-red { --card-bg: #4a1a1a; }
+
+    /* === スペーシングデモ === */
+    .spacing-demo {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex-wrap: wrap;
+    }
+
+    .spacing-box {
+      background-color: var(--color-primary);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .sp-xs { padding: var(--spacing-xs); }
+    .sp-sm { padding: var(--spacing-sm); }
+    .sp-md { padding: var(--spacing-md); }
+    .sp-lg { padding: var(--spacing-lg); }
+    .sp-xl { padding: var(--spacing-xl); }
+
+    /* === ボーダー半径デモ === */
+    .radius-demo {
+      display: flex;
+      gap: var(--spacing-md);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .radius-box {
+      width: 80px;
+      height: 80px;
+      background-color: var(--color-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: var(--font-size-sm);
+      font-weight: bold;
+    }
+
+    .r-sm   { border-radius: var(--radius-sm); }
+    .r-md   { border-radius: var(--radius-md); }
+    .r-lg   { border-radius: var(--radius-lg); }
+    .r-full { border-radius: var(--radius-full); }
+
+    /* === カスタムスライダー === */
+    .slider-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .slider-group label {
+      display: block;
+      margin-bottom: var(--spacing-xs);
+      font-weight: bold;
+      color: var(--text-muted);
+    }
+
+    .slider-group input[type="range"] {
+      width: 200px;
+    }
+
+    .slider-group input[type="color"] {
+      width: 60px;
+      height: 30px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* === 動的カードプレビュー === */
+    .preview-card {
+      background-color: var(--preview-bg, #3498db);
+      color: #fff;
+      padding: var(--preview-padding, 20px);
+      border-radius: var(--preview-radius, 8px);
+      font-size: var(--preview-font-size, 1rem);
+      text-align: center;
+      max-width: 300px;
+      transition: all var(--transition-normal);
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    &#127769; テーマ切替
+  </button>
+
+  <h1>CSSカスタムプロパティ サンプル</h1>
+
+  <!-- カラーパレット -->
+  <div class="section">
+    <h2>1. カラーパレット（グローバル変数）</h2>
+    <p style="margin-bottom: 10px;">
+      <code>:root</code> で定義した変数は、ページ全体で使えます。
+    </p>
+    <div class="palette">
+      <div class="palette-item primary">--color-<br>primary</div>
+      <div class="palette-item secondary">--color-<br>secondary</div>
+      <div class="palette-item accent">--color-<br>accent</div>
+      <div class="palette-item warning">--color-<br>warning</div>
+    </div>
+  </div>
+
+  <!-- ローカルスコープ -->
+  <div class="section">
+    <h2>2. ローカルスコープ（コンポーネント変数）</h2>
+    <p style="margin-bottom: 10px;">クラスごとに変数を上書きすることで、同じ構造のカードの色を変えられます。</p>
+    <div class="scoped-card card-blue">
+      <h4>お知らせ</h4>
+      <p>--card-color と --card-bg をローカルで定義しています。</p>
+    </div>
+    <div class="scoped-card card-green">
+      <h4>成功</h4>
+      <p>同じ CSS 構造で、色だけ変数で切り替えています。</p>
+    </div>
+    <div class="scoped-card card-red">
+      <h4>エラー</h4>
+      <p>変数のスコープにより、各カードに異なる色が適用されます。</p>
+    </div>
+  </div>
+
+  <!-- スペーシング -->
+  <div class="section">
+    <h2>3. デザイントークン: スペーシング</h2>
+    <p style="margin-bottom: 10px;">統一されたスペーシング値を変数で管理します。</p>
+    <div class="spacing-demo">
+      <div class="spacing-box sp-xs">xs (4px)</div>
+      <div class="spacing-box sp-sm">sm (8px)</div>
+      <div class="spacing-box sp-md">md (16px)</div>
+      <div class="spacing-box sp-lg">lg (24px)</div>
+      <div class="spacing-box sp-xl">xl (32px)</div>
+    </div>
+  </div>
+
+  <!-- ボーダー半径 -->
+  <div class="section">
+    <h2>4. デザイントークン: ボーダー半径</h2>
+    <div class="radius-demo">
+      <div class="radius-box r-sm">sm</div>
+      <div class="radius-box r-md">md</div>
+      <div class="radius-box r-lg">lg</div>
+      <div class="radius-box r-full">full</div>
+    </div>
+  </div>
+
+  <!-- JavaScript からの操作 -->
+  <div class="section">
+    <h2>5. JavaScript からの変数操作</h2>
+    <p style="margin-bottom: 10px;">スライダーを動かすと、リアルタイムでカードのスタイルが変わります。</p>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+      <div>
+        <div class="slider-group">
+          <label>背景色:</label>
+          <input type="color" id="bgColor" value="#3498db"
+                 onchange="updatePreview('--preview-bg', this.value)">
+        </div>
+
+        <div class="slider-group">
+          <label>パディング: <span id="paddingValue">20</span>px</label>
+          <input type="range" id="padding" min="5" max="50" value="20"
+                 oninput="updatePreview('--preview-padding', this.value + 'px'); document.getElementById('paddingValue').textContent = this.value">
+        </div>
+
+        <div class="slider-group">
+          <label>角丸: <span id="radiusValue">8</span>px</label>
+          <input type="range" id="radius" min="0" max="50" value="8"
+                 oninput="updatePreview('--preview-radius', this.value + 'px'); document.getElementById('radiusValue').textContent = this.value">
+        </div>
+
+        <div class="slider-group">
+          <label>フォントサイズ: <span id="fontValue">1.0</span>rem</label>
+          <input type="range" id="fontSize" min="8" max="24" value="10"
+                 oninput="updatePreview('--preview-font-size', (this.value / 10) + 'rem'); document.getElementById('fontValue').textContent = (this.value / 10).toFixed(1)">
+        </div>
+      </div>
+
+      <div>
+        <p style="margin-bottom: 5px; font-weight: bold; color: var(--text-muted);">プレビュー:</p>
+        <div class="preview-card" id="previewCard">
+          <h3>カードタイトル</h3>
+          <p>CSS変数をJSで操作中</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- テーマ切り替えの説明 -->
+  <div class="section">
+    <h2>6. テーマ切り替えの仕組み</h2>
+    <p>右上の「テーマ切替」ボタンを押すと、ライトモードとダークモードが切り替わります。</p>
+    <p style="margin-top: 10px;">仕組み: <code>html</code> 要素に <code>data-theme="dark"</code> を付与し、CSSの属性セレクタ <code>[data-theme="dark"]</code> で変数を上書きしています。JavaScriptは属性を切り替えるだけで、スタイルの変更はすべてCSSが担当します。</p>
+  </div>
+
+  <script>
+    // テーマ切り替え
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
+    // プレビューカードの変数を更新
+    function updatePreview(property, value) {
+      document.getElementById('previewCard').style.setProperty(property, value);
+    }
+  </script>
+</body>
+</html>

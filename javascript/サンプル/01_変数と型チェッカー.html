@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>変数と型チェッカー</title>
+  <!--
+    ==============================
+    変数と型チェッカー
+    第1章・第2章の総合サンプル
+    ==============================
+    学べる内容:
+      - 変数宣言（const, let）
+      - データ型（typeof, Array.isArray）
+      - 型変換（Number, String, Boolean）
+      - テンプレートリテラル
+      - DOM操作の基本
+    実行方法:
+      ブラウザでこのファイルを開くだけで動作します
+    ==============================
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #3498db;
+    }
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    button {
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2980b9; }
+    button:active { background: #2471a3; }
+    .result {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+    .result .label { color: #7f8c8d; }
+    .result .value { color: #2c3e50; font-weight: bold; }
+    .type-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: white;
+    }
+    .type-number { background: #e74c3c; }
+    .type-string { background: #27ae60; }
+    .type-boolean { background: #8e44ad; }
+    .type-undefined { background: #95a5a6; }
+    .type-object { background: #f39c12; }
+    .type-null { background: #34495e; }
+    .type-bigint { background: #d35400; }
+    .type-symbol { background: #16a085; }
+    .convert-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .convert-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .convert-item .label {
+      font-size: 0.8rem;
+      color: #7f8c8d;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .convert-item .value {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .example-btn {
+      padding: 6px 12px;
+      background: #ecf0f1;
+      color: #2c3e50;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .example-btn:hover { background: #dfe6e9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>変数と型チェッカー</h1>
+
+    <div class="card">
+      <h2>値を入力して型をチェック</h2>
+      <div class="input-group">
+        <input type="text" id="valueInput" placeholder="値を入力してください（例: 42, hello, true）">
+        <button id="checkBtn">チェック</button>
+      </div>
+      <div class="examples">
+        <span style="font-size:0.85rem; color:#7f8c8d;">例:</span>
+        <button class="example-btn" data-value="42">42</button>
+        <button class="example-btn" data-value="3.14">3.14</button>
+        <button class="example-btn" data-value="hello">"hello"</button>
+        <button class="example-btn" data-value="true">true</button>
+        <button class="example-btn" data-value="null">null</button>
+        <button class="example-btn" data-value="undefined">undefined</button>
+        <button class="example-btn" data-value="[1,2,3]">[1,2,3]</button>
+        <button class="example-btn" data-value='{"a":1}'>{"a":1}</button>
+        <button class="example-btn" data-value="NaN">NaN</button>
+        <button class="example-btn" data-value="">""(空文字)</button>
+      </div>
+      <div id="typeResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>型変換の結果</h2>
+      <p style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 8px;">
+        上で入力した値を Number(), String(), Boolean() で変換した結果です
+      </p>
+      <div id="convertResult" class="convert-section" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>falsy値チェック</h2>
+      <p style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 8px;">
+        入力した値が falsy（条件式で false と見なされる）かどうか確認できます
+      </p>
+      <div id="falsyResult" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- 要素の取得 ---
+    const valueInput = document.getElementById("valueInput");
+    const checkBtn = document.getElementById("checkBtn");
+    const typeResult = document.getElementById("typeResult");
+    const convertResult = document.getElementById("convertResult");
+    const falsyResult = document.getElementById("falsyResult");
+
+    // --- 入力値を JavaScript の値に変換する関数 ---
+    function parseInput(input) {
+      const trimmed = input.trim();
+
+      // 特殊なキーワード
+      if (trimmed === "undefined") return undefined;
+      if (trimmed === "null") return null;
+      if (trimmed === "true") return true;
+      if (trimmed === "false") return false;
+      if (trimmed === "NaN") return NaN;
+      if (trimmed === "Infinity") return Infinity;
+      if (trimmed === "-Infinity") return -Infinity;
+
+      // 数値チェック（空文字列は除外）
+      if (trimmed !== "" && !isNaN(Number(trimmed))) {
+        return Number(trimmed);
+      }
+
+      // JSON（配列やオブジェクト）チェック
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === "object") return parsed;
+      } catch {}
+
+      // クォート付きの文字列
+      if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+          (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+        return trimmed.slice(1, -1);
+      }
+
+      // それ以外は文字列として扱う
+      return trimmed;
+    }
+
+    // --- 型に応じたバッジのクラスを返す ---
+    function getTypeBadgeClass(value) {
+      if (value === null) return "type-null";
+      const t = typeof value;
+      return `type-${t}`;
+    }
+
+    // --- 型の詳細情報を取得 ---
+    function getTypeInfo(value) {
+      const basicType = typeof value;
+      let detailedType = basicType;
+
+      if (value === null) {
+        detailedType = "null（typeof は object を返しますが、実際は null です）";
+      } else if (Array.isArray(value)) {
+        detailedType = "object（配列 / Array）";
+      } else if (basicType === "object") {
+        detailedType = "object（オブジェクト）";
+      } else if (basicType === "number" && isNaN(value)) {
+        detailedType = "number（NaN: Not a Number）";
+      }
+
+      return { basicType, detailedType };
+    }
+
+    // --- チェック処理 ---
+    function checkValue() {
+      const rawInput = valueInput.value;
+      const value = parseInput(rawInput);
+      const { basicType, detailedType } = getTypeInfo(value);
+
+      // 型チェック結果の表示
+      const displayValue = value === undefined ? "undefined"
+        : value === null ? "null"
+        : typeof value === "string" ? `"${value}"`
+        : JSON.stringify(value) ?? String(value);
+
+      typeResult.style.display = "block";
+      typeResult.innerHTML = `
+        <div><span class="label">入力値:</span> <span class="value">${displayValue}</span></div>
+        <div><span class="label">typeof:</span> <span class="type-badge ${getTypeBadgeClass(value)}">${basicType}</span></div>
+        <div><span class="label">詳細:</span> <span class="value">${detailedType}</span></div>
+        ${Array.isArray(value) ? '<div><span class="label">Array.isArray():</span> <span class="value">true</span></div>' : ''}
+        ${value === null ? '<div><span class="label">value === null:</span> <span class="value">true</span></div>' : ''}
+      `;
+
+      // 型変換結果の表示
+      convertResult.style.display = "grid";
+      const numResult = Number(value);
+      const strResult = String(value);
+      const boolResult = Boolean(value);
+
+      convertResult.innerHTML = `
+        <div class="convert-item">
+          <span class="label">Number()</span>
+          <span class="value" style="color:#e74c3c">${isNaN(numResult) ? "NaN" : numResult}</span>
+        </div>
+        <div class="convert-item">
+          <span class="label">String()</span>
+          <span class="value" style="color:#27ae60">"${strResult}"</span>
+        </div>
+        <div class="convert-item">
+          <span class="label">Boolean()</span>
+          <span class="value" style="color:#8e44ad">${boolResult}</span>
+        </div>
+      `;
+
+      // falsy チェック
+      falsyResult.style.display = "block";
+      const isFalsy = !value;
+      falsyResult.innerHTML = `
+        <div>
+          <span class="label">Boolean(${displayValue}):</span>
+          <span class="value" style="color: ${boolResult ? '#27ae60' : '#e74c3c'}">${boolResult}</span>
+        </div>
+        <div>
+          <span class="label">判定:</span>
+          <span class="value">${isFalsy ? "falsy（条件式で false として扱われます）" : "truthy（条件式で true として扱われます）"}</span>
+        </div>
+      `;
+    }
+
+    // --- イベント登録 ---
+    checkBtn.addEventListener("click", checkValue);
+    valueInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") checkValue();
+    });
+
+    // サンプル値ボタン
+    document.querySelectorAll(".example-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        valueInput.value = btn.dataset.value;
+        checkValue();
+      });
+    });
+  </script>
+</body>
+</html>

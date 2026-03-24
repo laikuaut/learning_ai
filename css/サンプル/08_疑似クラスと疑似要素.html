@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>08: 疑似クラスと疑似要素</title>
+  <!--
+    学べる内容:
+      - 疑似クラス: :hover, :focus, :active, :visited
+      - 疑似クラス: :first-child, :last-child, :nth-child()
+      - 疑似クラス: :not(), :is(), :has()
+      - 疑似クラス: :checked, :disabled, :required, :valid, :invalid
+      - 疑似要素: ::before, ::after
+      - 疑似要素: ::first-line, ::first-letter, ::selection, ::placeholder
+      - 実践的な活用例（ツールチップ、装飾、バッジ）
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください。
+      各要素にマウスを乗せたり、フォームに入力したりして動作を確認してください。
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #f5576c, #ff8a65);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #e74c3c;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    h3 {
+      color: #555;
+      margin: 15px 0 8px;
+      font-size: 1em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    /* === 1. インタラクション系疑似クラス === */
+    .hover-box {
+      display: inline-block;
+      padding: 15px 25px;
+      background-color: #3498db;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+
+    .hover-box:hover {
+      background-color: #2980b9;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .hover-box:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .focus-input {
+      padding: 10px 15px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1em;
+      outline: none;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .focus-input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+
+    .focus-input:focus-visible {
+      /* キーボード操作時のみ表示されるフォーカスリング */
+      outline: 2px solid #3498db;
+      outline-offset: 2px;
+    }
+
+    .link-demo a:link    { color: #3498db; }
+    .link-demo a:visited { color: #9b59b6; }
+    .link-demo a:hover   { color: #e74c3c; text-decoration: none; }
+    .link-demo a:active  { color: #e67e22; }
+
+    /* === 2. 構造系疑似クラス === */
+    .child-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .child-list li {
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      transition: background-color 0.2s;
+    }
+
+    /* 最初の子要素 */
+    .child-list li:first-child {
+      background-color: #d4e6f1;
+      border-radius: 6px 6px 0 0;
+      font-weight: bold;
+    }
+
+    /* 最後の子要素 */
+    .child-list li:last-child {
+      border-bottom: none;
+      border-radius: 0 0 6px 6px;
+    }
+
+    /* 偶数番目 */
+    .child-list li:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    /* ホバー */
+    .child-list li:hover {
+      background-color: #eaf2f8;
+    }
+
+    /* nth-child のパターン */
+    .nth-demo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 10px 0;
+    }
+
+    .nth-demo span {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #ecf0f1;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+
+    /* 3の倍数を赤に */
+    .nth-3n span:nth-child(3n) {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+
+    /* 最初の5つを青に */
+    .nth-5 span:nth-child(-n+5) {
+      background-color: #3498db;
+      color: #fff;
+    }
+
+    /* === 3. :not() / :is() === */
+    .not-demo p {
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+    }
+
+    /* .special 以外の p をグレーに */
+    .not-demo p:not(.special) {
+      background-color: #ecf0f1;
+      color: #666;
+    }
+
+    .not-demo p.special {
+      background-color: #2ecc71;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    /* :is() でまとめて指定 */
+    .is-demo :is(h4, h5, h6) {
+      color: #8e44ad;
+      border-left: 3px solid #8e44ad;
+      padding-left: 10px;
+      margin: 5px 0;
+    }
+
+    /* === 4. フォーム系疑似クラス === */
+    .form-demo {
+      max-width: 400px;
+    }
+
+    .form-demo .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-demo label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .form-demo input,
+    .form-demo select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1em;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    /* 必須項目のラベルにアスタリスク */
+    .form-demo label:has(+ input:required)::after,
+    .form-demo label:has(+ input[required])::after {
+      content: " *";
+      color: #e74c3c;
+    }
+
+    /* 有効な入力 */
+    .form-demo input:valid {
+      border-color: #2ecc71;
+    }
+
+    /* 無効な入力（フォーカス時のみ表示） */
+    .form-demo input:invalid:focus {
+      border-color: #e74c3c;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+    }
+
+    /* 無効化された入力 */
+    .form-demo input:disabled {
+      background-color: #ecf0f1;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    /* チェックボックスのカスタム */
+    .custom-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .custom-check:hover {
+      background-color: #f0f0f0;
+    }
+
+    .custom-check input:checked + span {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    /* === 5. ::before / ::after === */
+    .quote-box {
+      position: relative;
+      padding: 20px 25px;
+      background-color: #f8f9fa;
+      border-left: 4px solid #3498db;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+
+    .quote-box::before {
+      content: "\201C";  /* 左二重引用符 */
+      font-size: 3em;
+      color: #3498db;
+      position: absolute;
+      top: -10px;
+      left: 10px;
+      line-height: 1;
+    }
+
+    /* 必須マーク */
+    .required-label::after {
+      content: " (必須)";
+      color: #e74c3c;
+      font-size: 0.8em;
+    }
+
+    /* ツールチップ */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      border-bottom: 2px dotted #3498db;
+      cursor: help;
+      color: #3498db;
+    }
+
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      background-color: #2c3e50;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 0.85em;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-5px);
+    }
+
+    /* バッジ */
+    .badge-item {
+      display: inline-block;
+      position: relative;
+      padding: 8px 16px;
+      background-color: #3498db;
+      color: #fff;
+      border-radius: 6px;
+      margin: 5px;
+    }
+
+    .badge-item::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #e74c3c;
+      color: #fff;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75em;
+      font-weight: bold;
+    }
+
+    /* === 6. ::first-line / ::first-letter / ::selection === */
+    .typography-demo p {
+      margin-bottom: 15px;
+    }
+
+    .first-letter-demo::first-letter {
+      font-size: 3em;
+      font-weight: bold;
+      color: #e74c3c;
+      float: left;
+      line-height: 1;
+      margin-right: 5px;
+    }
+
+    .first-line-demo::first-line {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 1.1em;
+    }
+
+    .selection-demo::selection {
+      background-color: #f39c12;
+      color: #fff;
+    }
+
+    /* プレースホルダー */
+    .placeholder-demo::placeholder {
+      color: #bdc3c7;
+      font-style: italic;
+    }
+
+    /* === リスト装飾 === */
+    .decorated-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .decorated-list li {
+      padding: 8px 8px 8px 25px;
+      position: relative;
+      margin-bottom: 4px;
+    }
+
+    .decorated-list li::before {
+      content: "\2714";
+      color: #2ecc71;
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>疑似クラスと疑似要素 サンプル</h1>
+
+  <!-- インタラクション系 -->
+  <div class="section">
+    <h2>1. インタラクション疑似クラス</h2>
+
+    <h3>:hover / :active</h3>
+    <div>
+      <span class="hover-box">ホバーしてね</span>
+      <span class="hover-box" style="background-color: #2ecc71;">クリックも試して</span>
+    </div>
+
+    <h3>:focus / :focus-visible</h3>
+    <p style="margin-bottom: 5px;">クリックまたは Tab キーでフォーカスしてみましょう。</p>
+    <input class="focus-input" type="text" placeholder="フォーカスするとボーダーが変わります">
+
+    <h3>:link / :visited / :hover / :active</h3>
+    <div class="link-demo">
+      <p>
+        <a href="https://example.com">未訪問リンク (:link)</a> /
+        <a href="#">訪問済みリンク (:visited)</a>
+      </p>
+      <p><small>リンクにマウスを乗せると :hover、クリック中は :active の色になります。</small></p>
+    </div>
+  </div>
+
+  <!-- 構造系 -->
+  <div class="section">
+    <h2>2. 構造疑似クラス</h2>
+
+    <h3>:first-child / :last-child / :nth-child(even)</h3>
+    <ul class="child-list">
+      <li>1番目（:first-child で青背景・太字）</li>
+      <li>2番目（偶数: :nth-child(even)）</li>
+      <li>3番目</li>
+      <li>4番目（偶数）</li>
+      <li>5番目（:last-child で角丸）</li>
+    </ul>
+
+    <h3><code>:nth-child(3n)</code> — 3の倍数を赤に</h3>
+    <div class="nth-demo nth-3n">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+      <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+      <span>11</span><span>12</span>
+    </div>
+
+    <h3><code>:nth-child(-n+5)</code> — 最初の5つを青に</h3>
+    <div class="nth-demo nth-5">
+      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+      <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+    </div>
+  </div>
+
+  <!-- :not() / :is() -->
+  <div class="section">
+    <h2>3. :not() / :is()</h2>
+
+    <h3><code>:not(.special)</code> — 特定クラス以外をスタイリング</h3>
+    <div class="not-demo">
+      <p>通常の段落（グレー背景）</p>
+      <p class="special">特別な段落（緑背景）</p>
+      <p>通常の段落（グレー背景）</p>
+    </div>
+
+    <h3><code>:is(h4, h5, h6)</code> — まとめてスタイリング</h3>
+    <div class="is-demo">
+      <h4>h4 見出し</h4>
+      <h5>h5 見出し</h5>
+      <h6>h6 見出し</h6>
+    </div>
+  </div>
+
+  <!-- フォーム系 -->
+  <div class="section">
+    <h2>4. フォーム疑似クラス</h2>
+    <p style="margin-bottom: 10px;">入力して :valid / :invalid の変化を確認してみましょう。</p>
+    <div class="form-demo">
+      <div class="form-group">
+        <label for="f-email">メールアドレス</label>
+        <input type="email" id="f-email" required placeholder="user@example.com">
+      </div>
+      <div class="form-group">
+        <label for="f-age">年齢（18〜100）</label>
+        <input type="number" id="f-age" min="18" max="100" required>
+      </div>
+      <div class="form-group">
+        <label for="f-disabled">無効な入力欄</label>
+        <input type="text" id="f-disabled" disabled value="変更できません">
+      </div>
+      <div class="form-group">
+        <label class="custom-check">
+          <input type="checkbox">
+          <span>:checked で色が変わります</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ::before / ::after -->
+  <div class="section">
+    <h2>5. ::before / ::after</h2>
+
+    <h3>引用符の装飾（::before）</h3>
+    <div class="quote-box">
+      良いコードは良いドキュメントでもある。
+    </div>
+
+    <h3>ツールチップ（::after + data属性）</h3>
+    <p>
+      <span class="tooltip" data-tip="HyperText Markup Language">HTML</span> は
+      <span class="tooltip" data-tip="World Wide Web">Web</span> ページの基本です。
+      マウスを乗せると説明が表示されます。
+    </p>
+
+    <h3>バッジ（::after）</h3>
+    <div style="padding: 15px 0;">
+      <span class="badge-item" data-count="3">メール</span>
+      <span class="badge-item" data-count="12">通知</span>
+      <span class="badge-item" data-count="5">カート</span>
+    </div>
+
+    <h3>チェックマーク付きリスト（::before）</h3>
+    <ul class="decorated-list">
+      <li>HTML の基本構造を理解する</li>
+      <li>CSS でスタイリングできる</li>
+      <li>レスポンシブデザインを実装できる</li>
+      <li>アクセシビリティに配慮できる</li>
+    </ul>
+  </div>
+
+  <!-- テキスト系疑似要素 -->
+  <div class="section">
+    <h2>6. テキスト系疑似要素</h2>
+
+    <h3><code>::first-letter</code>（先頭文字の装飾）</h3>
+    <div class="typography-demo">
+      <p class="first-letter-demo">むかしむかし、あるところにおじいさんとおばあさんがいました。おじいさんは山へ芝刈りに、おばあさんは川へ洗濯に行きました。</p>
+    </div>
+
+    <h3><code>::first-line</code>（先頭行の装飾）</h3>
+    <div class="typography-demo">
+      <p class="first-line-demo">CSSの疑似要素は非常に強力なツールです。HTMLを変更せずに装飾的なコンテンツを追加できます。::first-line は最初の行だけを対象にスタイルを適用します。ウィンドウ幅を変えると、最初の行の範囲が動的に変わることが確認できます。</p>
+    </div>
+
+    <h3><code>::selection</code>（テキスト選択時の色）</h3>
+    <div class="typography-demo">
+      <p class="selection-demo">このテキストをマウスでドラッグして選択すると、背景がオレンジ色になります。::selection 疑似要素で選択時のスタイルをカスタマイズしています。</p>
+    </div>
+
+    <h3><code>::placeholder</code>（プレースホルダーの装飾）</h3>
+    <input class="focus-input placeholder-demo" type="text"
+           placeholder="イタリック体のプレースホルダー"
+           style="margin-top: 5px;">
+  </div>
+</body>
+</html>

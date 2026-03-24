@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02: CSSボックスモデル</title>
+  <!--
+    学べる内容:
+      - ボックスモデルの4層構造（content, padding, border, margin）
+      - box-sizing: content-box vs border-box
+      - margin の相殺（collapsing）
+      - display プロパティ（block, inline, inline-block, none）
+      - width / height / max-width / min-height
+      - overflow の制御
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      color: #e74c3c;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .description {
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    /* === ボックスモデルの視覚化 === */
+    .box-model-demo {
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .box-margin {
+      background-color: #f9e79f;
+      padding: 20px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .box-margin::before {
+      content: "margin (外側の余白)";
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      font-size: 0.75em;
+      color: #7d6608;
+    }
+
+    .box-border {
+      background-color: #aed6f1;
+      padding: 20px;
+      border: 4px dashed #2980b9;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .box-border::before {
+      content: "border (枠線)";
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      font-size: 0.75em;
+      color: #1a5276;
+    }
+
+    .box-padding {
+      background-color: #a9dfbf;
+      padding: 20px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .box-padding::before {
+      content: "padding (内側の余白)";
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      font-size: 0.75em;
+      color: #1e8449;
+    }
+
+    .box-content {
+      background-color: #d5a6bd;
+      padding: 20px;
+      text-align: center;
+      border-radius: 4px;
+      color: #6c3461;
+      font-weight: bold;
+    }
+
+    /* === content-box vs border-box === */
+    .sizing-compare {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .box-content-box {
+      box-sizing: content-box;
+      width: 200px;
+      padding: 20px;
+      border: 5px solid #3498db;
+      background-color: #d4e6f1;
+      /* 実際の表示幅 = 200 + 20*2 + 5*2 = 250px */
+    }
+
+    .box-border-box {
+      box-sizing: border-box;
+      width: 200px;
+      padding: 20px;
+      border: 5px solid #e74c3c;
+      background-color: #fadbd8;
+      /* 実際の表示幅 = 200px（padding・borderを含む） */
+    }
+
+    /* === display プロパティ === */
+    .display-demo {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .d-block {
+      display: block;
+      background-color: #aed6f1;
+      padding: 8px;
+      margin-bottom: 5px;
+      border-radius: 4px;
+    }
+
+    .d-inline {
+      display: inline;
+      background-color: #a9dfbf;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .d-inline-block {
+      display: inline-block;
+      background-color: #f9e79f;
+      padding: 8px 16px;
+      margin: 5px;
+      border-radius: 4px;
+      width: 120px;
+      text-align: center;
+    }
+
+    /* === margin の相殺デモ === */
+    .collapse-demo {
+      background-color: #f0f0f0;
+      padding: 1px;
+      border-radius: 4px;
+    }
+
+    .collapse-box {
+      background-color: #aed6f1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .collapse-box.first {
+      margin-bottom: 30px;
+    }
+
+    .collapse-box.second {
+      margin-top: 20px;
+    }
+
+    /* === width / max-width === */
+    .width-demo {
+      margin-bottom: 10px;
+      border-radius: 4px;
+      padding: 10px;
+      text-align: center;
+      color: #fff;
+    }
+
+    .w-fixed {
+      width: 300px;
+      background-color: #3498db;
+    }
+
+    .w-percent {
+      width: 50%;
+      background-color: #2ecc71;
+    }
+
+    .w-max {
+      width: 100%;
+      max-width: 500px;
+      background-color: #9b59b6;
+    }
+
+    .w-min-max {
+      min-width: 200px;
+      max-width: 80%;
+      width: 60%;
+      background-color: #e67e22;
+    }
+
+    /* === overflow === */
+    .overflow-demo {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .overflow-box {
+      width: 200px;
+      height: 100px;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 0.85em;
+    }
+
+    .of-visible { overflow: visible; }
+    .of-hidden  { overflow: hidden; }
+    .of-scroll  { overflow: scroll; }
+    .of-auto    { overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>CSSボックスモデル サンプル</h1>
+
+  <!-- ボックスモデルの視覚化 -->
+  <div class="section">
+    <h2>1. ボックスモデルの構造</h2>
+    <p class="description">すべてのHTML要素は4層のボックスで構成されています。</p>
+    <div class="box-model-demo">
+      <div class="box-margin">
+        <div class="box-border">
+          <div class="box-padding">
+            <div class="box-content">content<br>(コンテンツ)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p>外側から: <code>margin</code> → <code>border</code> → <code>padding</code> → <code>content</code></p>
+  </div>
+
+  <!-- box-sizing の比較 -->
+  <div class="section">
+    <h2>2. box-sizing の違い</h2>
+    <p class="description">同じ <code>width: 200px</code> を指定しても、box-sizing によって実際の表示幅が変わります。</p>
+    <div class="sizing-compare">
+      <div>
+        <div class="box-content-box">
+          <strong>content-box</strong><br>
+          width: 200px<br>
+          padding: 20px<br>
+          border: 5px<br>
+          → 実際: 250px
+        </div>
+        <p><small>content-box: 幅 = content のみ</small></p>
+      </div>
+      <div>
+        <div class="box-border-box">
+          <strong>border-box</strong><br>
+          width: 200px<br>
+          padding: 20px<br>
+          border: 5px<br>
+          → 実際: 200px
+        </div>
+        <p><small>border-box: 幅 = 全体（推奨）</small></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- display プロパティ -->
+  <div class="section">
+    <h2>3. display プロパティ</h2>
+
+    <p><strong>block</strong>（幅いっぱい、縦に並ぶ）:</p>
+    <div class="display-demo">
+      <div class="d-block">block 要素 1</div>
+      <div class="d-block">block 要素 2</div>
+      <div class="d-block">block 要素 3</div>
+    </div>
+
+    <p><strong>inline</strong>（内容に合わせた幅、横に並ぶ、width/height 指定不可）:</p>
+    <div class="display-demo">
+      <span class="d-inline">inline 1</span>
+      <span class="d-inline">inline 2</span>
+      <span class="d-inline">inline 3</span>
+    </div>
+
+    <p><strong>inline-block</strong>（横に並びつつ、width/height 指定可能）:</p>
+    <div class="display-demo">
+      <span class="d-inline-block">メニュー1</span>
+      <span class="d-inline-block">メニュー2</span>
+      <span class="d-inline-block">メニュー3</span>
+    </div>
+  </div>
+
+  <!-- margin の相殺 -->
+  <div class="section">
+    <h2>4. margin の相殺（Collapsing）</h2>
+    <p class="description">
+      隣接するブロック要素の上下 margin は相殺され、大きい方の値だけが適用されます。<br>
+      下の例: 上のボックスの margin-bottom: 30px、下のボックスの margin-top: 20px → 間隔は 30px（50px ではない）
+    </p>
+    <div class="collapse-demo">
+      <div class="collapse-box first">margin-bottom: 30px</div>
+      <div class="collapse-box second">margin-top: 20px</div>
+    </div>
+    <p><small>※ 間隔は30px + 20px = 50px ではなく、大きい方の30pxになります</small></p>
+  </div>
+
+  <!-- width の種類 -->
+  <div class="section">
+    <h2>5. width / max-width</h2>
+    <p class="description">ブラウザの幅を変えて、各ボックスの挙動を確認してみましょう。</p>
+    <div class="width-demo w-fixed">width: 300px（固定幅）</div>
+    <div class="width-demo w-percent">width: 50%（親要素の半分）</div>
+    <div class="width-demo w-max">width: 100%, max-width: 500px</div>
+    <div class="width-demo w-min-max">min-width: 200px, max-width: 80%</div>
+  </div>
+
+  <!-- overflow -->
+  <div class="section">
+    <h2>6. overflow（はみ出し制御）</h2>
+    <p class="description">コンテンツがボックスからはみ出した場合の挙動を制御します。</p>
+    <div class="overflow-demo">
+      <div>
+        <p><code>visible</code>（デフォルト）</p>
+        <div class="overflow-box of-visible">
+          このテキストはボックスからはみ出して表示されます。overflow: visible はデフォルト値で、はみ出した部分もそのまま表示されます。
+        </div>
+      </div>
+      <div>
+        <p><code>hidden</code></p>
+        <div class="overflow-box of-hidden">
+          このテキストはボックスからはみ出した部分が隠されます。overflow: hidden ではみ出した部分が非表示になります。
+        </div>
+      </div>
+      <div>
+        <p><code>scroll</code></p>
+        <div class="overflow-box of-scroll">
+          このテキストにはスクロールバーが常に表示されます。overflow: scroll でスクロール可能になります。
+        </div>
+      </div>
+      <div>
+        <p><code>auto</code></p>
+        <div class="overflow-box of-auto">
+          はみ出した場合のみスクロールバーが表示されます。overflow: auto は必要な時だけスクロールバーを出す実用的な設定です。
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

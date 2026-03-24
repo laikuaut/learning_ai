@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04 フォームバリデーション</title>
+  <!--
+    ========================================
+    学べる内容:
+    - 制御コンポーネント（Controlled Component）
+    - フォームの状態管理
+    - リアルタイムバリデーション
+    - フォーム送信とエラーハンドリング
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background-color: #f5f5f5; }
+    .app { max-width: 500px; margin: 40px auto; padding: 20px; }
+    .form-card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #333; margin-bottom: 24px; font-size: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 14px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px;
+      font-size: 15px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #5c6bc0; box-shadow: 0 0 0 3px rgba(92,107,192,0.1);
+    }
+    .form-group input.error, .form-group select.error, .form-group textarea.error {
+      border-color: #e53935; box-shadow: 0 0 0 3px rgba(229,57,53,0.1);
+    }
+    .form-group input.valid, .form-group select.valid, .form-group textarea.valid {
+      border-color: #43a047; box-shadow: 0 0 0 3px rgba(67,160,71,0.1);
+    }
+    .error-msg { color: #e53935; font-size: 13px; margin-top: 4px; }
+    .helper-text { color: #999; font-size: 12px; margin-top: 4px; }
+    .password-strength { height: 4px; border-radius: 2px; margin-top: 6px; transition: all 0.3s; }
+    .strength-weak { background: #e53935; width: 33%; }
+    .strength-medium { background: #fb8c00; width: 66%; }
+    .strength-strong { background: #43a047; width: 100%; }
+    .submit-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #5c6bc0; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .submit-btn:hover:not(:disabled) { background: #3f51b5; }
+    .submit-btn:active:not(:disabled) { transform: scale(0.98); }
+    .submit-btn:disabled { background: #c5cae9; cursor: not-allowed; }
+    .success-message { text-align: center; padding: 40px; }
+    .success-message h2 { color: #43a047; margin-bottom: 8px; }
+    .success-message p { color: #666; }
+    .char-count { text-align: right; font-size: 12px; color: #999; margin-top: 4px; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .checkbox-group input { width: auto; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ========================================
+    // バリデーションルール
+    // 各フィールドに対するバリデーション関数を定義
+    // ========================================
+    const validators = {
+      name: (value) => {
+        if (!value.trim()) return '名前は必須です';
+        if (value.trim().length < 2) return '2文字以上で入力してください';
+        return '';
+      },
+      email: (value) => {
+        if (!value.trim()) return 'メールアドレスは必須です';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '正しいメールアドレスを入力してください';
+        return '';
+      },
+      password: (value) => {
+        if (!value) return 'パスワードは必須です';
+        if (value.length < 8) return '8文字以上で入力してください';
+        if (!/[A-Z]/.test(value)) return '大文字を1文字以上含めてください';
+        if (!/[0-9]/.test(value)) return '数字を1文字以上含めてください';
+        return '';
+      },
+      confirmPassword: (value, formData) => {
+        if (!value) return 'パスワード（確認）は必須です';
+        if (value !== formData.password) return 'パスワードが一致しません';
+        return '';
+      },
+      age: (value) => {
+        if (!value) return '年齢は必須です';
+        const num = Number(value);
+        if (isNaN(num) || num < 0 || num > 150) return '0〜150の数値を入力してください';
+        return '';
+      },
+      bio: (value) => {
+        if (value.length > 200) return '200文字以内で入力してください';
+        return '';
+      },
+    };
+
+    // パスワード強度を判定
+    function getPasswordStrength(password) {
+      if (!password) return null;
+      let score = 0;
+      if (password.length >= 8) score++;
+      if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+      if (/[0-9]/.test(password)) score++;
+      if (/[^A-Za-z0-9]/.test(password)) score++;
+
+      if (score <= 1) return { level: 'weak', label: '弱い', className: 'strength-weak' };
+      if (score <= 2) return { level: 'medium', label: '普通', className: 'strength-medium' };
+      return { level: 'strong', label: '強い', className: 'strength-strong' };
+    }
+
+    function RegistrationForm() {
+      // ========================================
+      // 制御コンポーネント：Reactのstateでフォームの値を管理
+      // input の value を state に紐づけ、onChange で更新する
+      // ========================================
+      const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        age: '',
+        bio: '',
+        agreeToTerms: false,
+      });
+      const [errors, setErrors] = useState({});
+      const [touched, setTouched] = useState({});
+      const [isSubmitted, setIsSubmitted] = useState(false);
+
+      // フィールド更新
+      const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : value;
+
+        setFormData(prev => ({ ...prev, [name]: newValue }));
+
+        // 入力中にバリデーション（触れたフィールドのみ）
+        if (touched[name] && validators[name]) {
+          const error = validators[name](type === 'checkbox' ? checked : value, { ...formData, [name]: newValue });
+          setErrors(prev => ({ ...prev, [name]: error }));
+        }
+      };
+
+      // フォーカスが外れた時にバリデーション
+      const handleBlur = (e) => {
+        const { name, value } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+
+        if (validators[name]) {
+          const error = validators[name](value, formData);
+          setErrors(prev => ({ ...prev, [name]: error }));
+        }
+      };
+
+      // フォーム送信
+      const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // 全フィールドをバリデーション
+        const newErrors = {};
+        Object.keys(validators).forEach(key => {
+          const error = validators[key](formData[key], formData);
+          if (error) newErrors[key] = error;
+        });
+
+        if (!formData.agreeToTerms) {
+          newErrors.agreeToTerms = '利用規約に同意してください';
+        }
+
+        setErrors(newErrors);
+        setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+
+        if (Object.keys(newErrors).length === 0) {
+          setIsSubmitted(true);
+        }
+      };
+
+      // 送信完了画面
+      if (isSubmitted) {
+        return (
+          <div className="form-card">
+            <div className="success-message">
+              <h2>登録完了！</h2>
+              <p>{formData.name}さん、ようこそ！</p>
+              <p style={{ marginTop: '8px', color: '#999' }}>{formData.email} にメールを送信しました。</p>
+              <button
+                className="submit-btn"
+                style={{ marginTop: '24px' }}
+                onClick={() => {
+                  setIsSubmitted(false);
+                  setFormData({ name: '', email: '', password: '', confirmPassword: '', age: '', bio: '', agreeToTerms: false });
+                  setErrors({});
+                  setTouched({});
+                }}
+              >
+                新しい登録
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      const passwordStrength = getPasswordStrength(formData.password);
+      const getFieldClass = (name) => {
+        if (!touched[name]) return '';
+        return errors[name] ? 'error' : 'valid';
+      };
+
+      return (
+        <div className="form-card">
+          <h1>ユーザー登録</h1>
+
+          <form onSubmit={handleSubmit} noValidate>
+            {/* 名前 */}
+            <div className="form-group">
+              <label htmlFor="name">名前 *</label>
+              <input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('name')}
+                placeholder="山田 太郎"
+              />
+              {touched.name && errors.name && <p className="error-msg">{errors.name}</p>}
+            </div>
+
+            {/* メール */}
+            <div className="form-group">
+              <label htmlFor="email">メールアドレス *</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('email')}
+                placeholder="example@mail.com"
+              />
+              {touched.email && errors.email && <p className="error-msg">{errors.email}</p>}
+            </div>
+
+            {/* パスワード */}
+            <div className="form-group">
+              <label htmlFor="password">パスワード *</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('password')}
+                placeholder="8文字以上、大文字・数字を含む"
+              />
+              {passwordStrength && (
+                <div>
+                  <div className={`password-strength ${passwordStrength.className}`}></div>
+                  <span className="helper-text">
+                    強度: {passwordStrength.label}
+                  </span>
+                </div>
+              )}
+              {touched.password && errors.password && <p className="error-msg">{errors.password}</p>}
+            </div>
+
+            {/* パスワード確認 */}
+            <div className="form-group">
+              <label htmlFor="confirmPassword">パスワード（確認）*</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('confirmPassword')}
+                placeholder="パスワードを再入力"
+              />
+              {touched.confirmPassword && errors.confirmPassword && <p className="error-msg">{errors.confirmPassword}</p>}
+            </div>
+
+            {/* 年齢 */}
+            <div className="form-group">
+              <label htmlFor="age">年齢 *</label>
+              <input
+                id="age"
+                name="age"
+                type="number"
+                value={formData.age}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('age')}
+                min="0"
+                max="150"
+              />
+              {touched.age && errors.age && <p className="error-msg">{errors.age}</p>}
+            </div>
+
+            {/* 自己紹介 */}
+            <div className="form-group">
+              <label htmlFor="bio">自己紹介</label>
+              <textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={getFieldClass('bio')}
+                rows="3"
+                placeholder="自由に自己紹介をどうぞ（200文字以内）"
+              />
+              <div className="char-count" style={{ color: formData.bio.length > 200 ? '#e53935' : '#999' }}>
+                {formData.bio.length} / 200
+              </div>
+              {touched.bio && errors.bio && <p className="error-msg">{errors.bio}</p>}
+            </div>
+
+            {/* 利用規約 */}
+            <div className="form-group">
+              <div className="checkbox-group">
+                <input
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  type="checkbox"
+                  checked={formData.agreeToTerms}
+                  onChange={handleChange}
+                />
+                <label htmlFor="agreeToTerms" style={{ fontWeight: 'normal', margin: 0 }}>
+                  利用規約に同意します
+                </label>
+              </div>
+              {touched.agreeToTerms && errors.agreeToTerms && <p className="error-msg">{errors.agreeToTerms}</p>}
+            </div>
+
+            <button type="submit" className="submit-btn">
+              登録する
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <div className="app">
+          <RegistrationForm />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

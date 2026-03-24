@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05: レスポンシブデザイン</title>
+  <!--
+    学べる内容:
+      - メディアクエリ（@media）の基本
+      - ブレークポイントの設定
+      - モバイルファースト設計
+      - レスポンシブなナビゲーション
+      - レスポンシブなカードレイアウト
+      - レスポンシブなタイポグラフィ
+      - clamp() によるフルードタイポグラフィ
+      - 相対単位（rem, em, vw, vh, %）
+    実行方法:
+      ブラウザでこのHTMLファイルを開いて、ウィンドウ幅を変えて確認してください
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+
+    /* === ヘッダー === */
+    .header {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-list a {
+      color: #ecf0f1;
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    .nav-list a:hover {
+      background-color: #34495e;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+
+    /* === メインコンテンツ === */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      /* clamp: 最小, 推奨, 最大 */
+      font-size: clamp(1.2em, 4vw, 2em);
+    }
+
+    h2 {
+      color: #8e44ad;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* === ブレークポイント表示 === */
+    .breakpoint-indicator {
+      text-align: center;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+
+    /* === カードレイアウト === */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .card {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card-image {
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .card:nth-child(1) .card-image { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .card:nth-child(2) .card-image { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .card:nth-child(3) .card-image { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+    .card:nth-child(4) .card-image { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+    .card:nth-child(5) .card-image { background: linear-gradient(135deg, #fa709a, #fee140); }
+    .card:nth-child(6) .card-image { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+
+    .card-body {
+      padding: 15px;
+    }
+
+    .card-body h3 {
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .card-body p {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    /* === 2カラムレイアウト === */
+    .two-column {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    .main-content {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #ddd;
+    }
+
+    .sidebar {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #ddd;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* === フルードタイポグラフィ === */
+    .fluid-text {
+      /* clamp(最小値, 推奨値, 最大値) */
+      font-size: clamp(1rem, 2.5vw, 2rem);
+      line-height: 1.5;
+    }
+
+    .fluid-small {
+      font-size: clamp(0.8rem, 1.5vw, 1rem);
+      color: #666;
+    }
+
+    /* === レスポンシブ画像 === */
+    .responsive-image {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    /* === テーブル === */
+    .responsive-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .responsive-table th,
+    .responsive-table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    .responsive-table th {
+      background-color: #3498db;
+      color: #fff;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    /* === フッター === */
+    .footer {
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      padding: 30px 20px;
+      margin-top: 30px;
+    }
+
+    .footer-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .footer h4 {
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .footer ul {
+      list-style: none;
+    }
+
+    .footer li {
+      margin-bottom: 5px;
+    }
+
+    .footer a {
+      color: #bdc3c7;
+      text-decoration: none;
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 20px auto 0;
+      padding-top: 20px;
+      border-top: 1px solid #34495e;
+      text-align: center;
+      font-size: 0.85em;
+      color: #7f8c8d;
+    }
+
+    /* ============================================ */
+    /*  メディアクエリ（モバイルファースト）          */
+    /* ============================================ */
+
+    /* デフォルト: モバイル向けスタイル */
+    .breakpoint-indicator {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    .breakpoint-indicator::after {
+      content: "モバイル (〜767px)";
+    }
+
+    /* タブレット: 768px以上 */
+    @media (min-width: 768px) {
+      .breakpoint-indicator {
+        background-color: #f39c12;
+      }
+      .breakpoint-indicator::after {
+        content: "タブレット (768px〜1023px)";
+      }
+
+      .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* デスクトップ: 1024px以上 */
+    @media (min-width: 1024px) {
+      .breakpoint-indicator {
+        background-color: #2ecc71;
+      }
+      .breakpoint-indicator::after {
+        content: "デスクトップ (1024px〜)";
+      }
+
+      .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* モバイルでのレイアウト変更 */
+    @media (max-width: 767px) {
+      /* ナビゲーション: 縦並びに */
+      .nav-list {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        padding-top: 10px;
+      }
+
+      .nav-list.active {
+        display: flex;
+      }
+
+      .header-inner {
+        flex-wrap: wrap;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      /* カードは1列に */
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* 2カラムを1カラムに */
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+
+      /* フッター1カラム */
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-inner">
+      <span class="logo">TechLearn</span>
+      <button class="menu-toggle" onclick="document.querySelector('.nav-list').classList.toggle('active')">
+        &#9776;
+      </button>
+      <ul class="nav-list">
+        <li><a href="#">ホーム</a></li>
+        <li><a href="#">コース</a></li>
+        <li><a href="#">ブログ</a></li>
+        <li><a href="#">お問い合わせ</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>レスポンシブデザイン サンプル</h1>
+
+    <!-- ブレークポイント表示 -->
+    <div class="breakpoint-indicator"></div>
+
+    <!-- clamp によるフルードタイポグラフィ -->
+    <div class="section">
+      <h2>1. フルードタイポグラフィ（clamp）</h2>
+      <p class="fluid-text">
+        この文字サイズは <code>clamp(1rem, 2.5vw, 2rem)</code> で指定されています。ウィンドウ幅に応じて滑らかにサイズが変化します。
+      </p>
+      <p class="fluid-small">
+        小さいテキストも clamp() で制御: <code>clamp(0.8rem, 1.5vw, 1rem)</code>
+      </p>
+    </div>
+
+    <!-- カードレイアウト -->
+    <div class="section">
+      <h2>2. レスポンシブカードレイアウト</h2>
+      <p style="margin-bottom: 15px;">画面幅に応じて列数が変わります: モバイル1列 → タブレット2列 → デスクトップ3列</p>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-image">HTML入門</div>
+          <div class="card-body">
+            <h3>HTML入門</h3>
+            <p>Webページの基本構造を学びましょう。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-image">CSS基礎</div>
+          <div class="card-body">
+            <h3>CSS基礎</h3>
+            <p>スタイリングでページを美しく装飾します。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-image">JavaScript</div>
+          <div class="card-body">
+            <h3>JavaScript</h3>
+            <p>動的な機能をページに追加しましょう。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-image">React</div>
+          <div class="card-body">
+            <h3>React</h3>
+            <p>モダンなUI開発フレームワークです。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-image">Node.js</div>
+          <div class="card-body">
+            <h3>Node.js</h3>
+            <p>サーバーサイドJavaScript環境を学びます。</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-image">データベース</div>
+          <div class="card-body">
+            <h3>データベース</h3>
+            <p>データの保存と管理の基礎を習得します。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2カラムレイアウト -->
+    <div class="section">
+      <h2>3. 2カラム → 1カラム</h2>
+      <div class="two-column">
+        <div class="main-content">
+          <h3>メインコンテンツ</h3>
+          <p>デスクトップでは2カラム、モバイルでは1カラムに切り替わります。メディアクエリで <code>grid-template-columns</code> を変更しています。</p>
+          <p>レスポンシブデザインの基本は、画面幅に応じてレイアウトを柔軟に変更することです。</p>
+        </div>
+        <div class="sidebar">
+          <h3>サイドバー</h3>
+          <ul>
+            <li>カテゴリ一覧</li>
+            <li>人気記事</li>
+            <li>タグクラウド</li>
+            <li>アーカイブ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- レスポンシブテーブル -->
+    <div class="section">
+      <h2>4. レスポンシブテーブル</h2>
+      <p style="margin-bottom: 10px;">横幅が足りない場合、横スクロールで対応します。</p>
+      <div class="table-wrapper">
+        <table class="responsive-table">
+          <thead>
+            <tr>
+              <th>コース名</th>
+              <th>レベル</th>
+              <th>時間</th>
+              <th>価格</th>
+              <th>評価</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>HTML/CSS入門</td>
+              <td>初級</td>
+              <td>20時間</td>
+              <td>無料</td>
+              <td>4.8</td>
+            </tr>
+            <tr>
+              <td>JavaScript基礎</td>
+              <td>初級</td>
+              <td>30時間</td>
+              <td>5,000円</td>
+              <td>4.6</td>
+            </tr>
+            <tr>
+              <td>React実践</td>
+              <td>中級</td>
+              <td>40時間</td>
+              <td>12,000円</td>
+              <td>4.7</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <h4>サービス</h4>
+        <ul>
+          <li><a href="#">コース一覧</a></li>
+          <li><a href="#">料金プラン</a></li>
+          <li><a href="#">法人向け</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>会社情報</h4>
+        <ul>
+          <li><a href="#">会社概要</a></li>
+          <li><a href="#">採用情報</a></li>
+          <li><a href="#">お問い合わせ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>サポート</h4>
+        <ul>
+          <li><a href="#">ヘルプセンター</a></li>
+          <li><a href="#">利用規約</a></li>
+          <li><a href="#">プライバシーポリシー</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Copyright 2025 TechLearn. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

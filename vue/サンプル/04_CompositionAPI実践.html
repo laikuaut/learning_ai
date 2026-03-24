@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04 Composition API 実践</title>
+  <!--
+    ========================================
+    学べる内容:
+    - ref / reactive の使い分け
+    - computed（算出プロパティ）
+    - watch / watchEffect（値の監視）
+    - composable（ロジックの再利用）
+    - ライフサイクルフック（onMounted / onUnmounted）
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f5f5f5; }
+    .app { max-width: 700px; margin: 0 auto; padding: 20px; }
+    h1 { text-align: center; color: #35495e; margin-bottom: 24px; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .card h2 { color: #42b883; margin-bottom: 16px; font-size: 18px; border-bottom: 2px solid #42b883; padding-bottom: 8px; }
+    .info-box { padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; }
+    .info-box.blue { background: #e3f2fd; color: #1565c0; }
+    .info-box.green { background: #e8f5e9; color: #2e7d32; }
+    .info-box.orange { background: #fff3e0; color: #e65100; }
+    .stopwatch { text-align: center; }
+    .time-display { font-size: 56px; font-family: 'Courier New', monospace; margin: 16px 0; }
+    .btn { padding: 8px 18px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; margin: 4px; transition: transform 0.1s; }
+    .btn:hover { transform: scale(1.05); }
+    .btn-start { background: #42b883; color: white; }
+    .btn-stop { background: #e74c3c; color: white; }
+    .btn-reset { background: #95a5a6; color: white; }
+    .btn-lap { background: #3498db; color: white; }
+    .lap-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .lap-table th, .lap-table td { padding: 6px 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
+    .lap-table th { background: #f8f9fa; font-weight: 600; }
+    .mouse-tracker { height: 200px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; position: relative; overflow: hidden; cursor: crosshair; }
+    .cursor-dot { width: 20px; height: 20px; background: rgba(255,255,255,0.8); border-radius: 50%; position: absolute; transform: translate(-50%, -50%); pointer-events: none; transition: all 0.1s; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+    .coord-display { color: white; position: absolute; bottom: 8px; right: 12px; font-size: 13px; font-family: monospace; }
+    .theme-demo { padding: 20px; border-radius: 8px; transition: all 0.3s; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="app">
+      <h1>Composition API 実践</h1>
+
+      <!-- 1. ref と reactive -->
+      <div class="card">
+        <h2>1. ref と reactive</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <h3 style="font-size: 15px; margin-bottom: 8px;">ref（プリミティブ値向け）</h3>
+            <input v-model="message" placeholder="メッセージ..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+            <p style="margin-top: 4px; color: #888; font-size: 13px;">文字数: {{ message.length }}</p>
+          </div>
+          <div>
+            <h3 style="font-size: 15px; margin-bottom: 8px;">reactive（オブジェクト向け）</h3>
+            <input v-model="user.name" placeholder="名前" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 4px;">
+            <input v-model.number="user.age" type="number" placeholder="年齢" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+        </div>
+
+        <div class="info-box blue" style="margin-top: 12px;">
+          <strong>結果:</strong> {{ message || '（未入力）' }} / {{ user.name || '名無し' }}さん（{{ user.age || 0 }}歳）
+        </div>
+      </div>
+
+      <!-- 2. computed -->
+      <div class="card">
+        <h2>2. computed（算出プロパティ）</h2>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input v-model="searchQuery" placeholder="検索..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+          <select v-model="sortOrder" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+            <option value="name">名前順</option>
+            <option value="price-asc">価格（安い順）</option>
+            <option value="price-desc">価格（高い順）</option>
+          </select>
+        </div>
+
+        <div v-for="item in filteredAndSorted" :key="item.id" style="display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee;">
+          <span>{{ item.name }}</span>
+          <span style="color: #e74c3c; font-weight: bold;">¥{{ item.price.toLocaleString() }}</span>
+        </div>
+        <p style="font-size: 13px; color: #888; margin-top: 8px;">{{ filteredAndSorted.length }} / {{ items.length }} 件</p>
+      </div>
+
+      <!-- 3. watch（デバウンス検索） -->
+      <div class="card">
+        <h2>3. watch（値の変更を監視）</h2>
+        <input v-model="watchInput" placeholder="入力すると300ms後に検索..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+
+        <div class="info-box green" v-if="watchResult">
+          <p>検索結果: {{ watchResult }}</p>
+        </div>
+        <p v-if="isWatching" style="color: #888; font-size: 13px; margin-top: 4px;">入力を監視中...</p>
+      </div>
+
+      <!-- 4. composable: ストップウォッチ -->
+      <div class="card">
+        <h2>4. Composable（ストップウォッチ）</h2>
+        <div class="stopwatch">
+          <div class="time-display" :style="{ color: isRunning ? '#42b883' : '#999' }">
+            {{ formatTime(elapsedTime) }}
+          </div>
+          <div>
+            <button v-if="!isRunning" :class="['btn', 'btn-start']" @click="startTimer">
+              {{ elapsedTime === 0 ? '開始' : '再開' }}
+            </button>
+            <button v-else class="btn btn-stop" @click="stopTimer">停止</button>
+            <button class="btn btn-lap" @click="recordLap" :disabled="!isRunning">ラップ</button>
+            <button class="btn btn-reset" @click="resetTimer">リセット</button>
+          </div>
+
+          <table v-if="laps.length > 0" class="lap-table">
+            <thead>
+              <tr><th>#</th><th>ラップ</th><th>スプリット</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="(lap, i) in laps" :key="i">
+                <td>{{ i + 1 }}</td>
+                <td style="font-family: monospace;">{{ formatTime(lap) }}</td>
+                <td style="font-family: monospace;">{{ formatTime(i === 0 ? lap : lap - laps[i-1]) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 5. composable: マウス追跡 -->
+      <div class="card">
+        <h2>5. Composable（マウス追跡）</h2>
+        <div class="mouse-tracker" @mousemove="handleMouseMove" ref="trackerEl">
+          <div class="cursor-dot" :style="{ left: mouse.x + 'px', top: mouse.y + 'px' }"></div>
+          <div class="coord-display">x: {{ mouse.x }}, y: {{ mouse.y }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive, computed, watch, onMounted, onUnmounted } = Vue
+
+    createApp({
+      setup() {
+        // ========================================
+        // 1. ref と reactive
+        // ========================================
+        const message = ref('')
+        const user = reactive({ name: '', age: null })
+
+        // ========================================
+        // 2. computed
+        // ========================================
+        const searchQuery = ref('')
+        const sortOrder = ref('name')
+
+        const items = ref([
+          { id: 1, name: 'Vue.js入門', price: 2980 },
+          { id: 2, name: 'TypeScript実践', price: 3480 },
+          { id: 3, name: 'React入門', price: 2500 },
+          { id: 4, name: 'Next.js実践', price: 3800 },
+          { id: 5, name: 'Node.js入門', price: 2200 },
+        ])
+
+        // computed は依存する ref が変わると自動で再計算
+        const filteredAndSorted = computed(() => {
+          let result = items.value.filter(item =>
+            item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+          )
+
+          if (sortOrder.value === 'price-asc') {
+            result = [...result].sort((a, b) => a.price - b.price)
+          } else if (sortOrder.value === 'price-desc') {
+            result = [...result].sort((a, b) => b.price - a.price)
+          } else {
+            result = [...result].sort((a, b) => a.name.localeCompare(b.name))
+          }
+
+          return result
+        })
+
+        // ========================================
+        // 3. watch（デバウンス）
+        // ========================================
+        const watchInput = ref('')
+        const watchResult = ref('')
+        const isWatching = ref(false)
+        let debounceTimer = null
+
+        watch(watchInput, (newVal, oldVal) => {
+          isWatching.value = true
+
+          if (debounceTimer) clearTimeout(debounceTimer)
+
+          if (!newVal.trim()) {
+            watchResult.value = ''
+            isWatching.value = false
+            return
+          }
+
+          debounceTimer = setTimeout(() => {
+            watchResult.value = `「${newVal}」で検索しました（${new Date().toLocaleTimeString()}）`
+            isWatching.value = false
+          }, 300)
+        })
+
+        // ========================================
+        // 4. Composable: useStopwatch
+        // ========================================
+        const elapsedTime = ref(0)
+        const isRunning = ref(false)
+        const laps = ref([])
+        let intervalId = null
+        let startTimestamp = 0
+
+        function startTimer() {
+          if (isRunning.value) return
+          isRunning.value = true
+          startTimestamp = Date.now() - elapsedTime.value
+          intervalId = setInterval(() => {
+            elapsedTime.value = Date.now() - startTimestamp
+          }, 10)
+        }
+
+        function stopTimer() {
+          isRunning.value = false
+          if (intervalId) clearInterval(intervalId)
+        }
+
+        function resetTimer() {
+          stopTimer()
+          elapsedTime.value = 0
+          laps.value = []
+        }
+
+        function recordLap() {
+          if (isRunning.value) {
+            laps.value.push(elapsedTime.value)
+          }
+        }
+
+        function formatTime(ms) {
+          const m = Math.floor(ms / 60000)
+          const s = Math.floor((ms % 60000) / 1000)
+          const cs = Math.floor((ms % 1000) / 10)
+          return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`
+        }
+
+        // ========================================
+        // 5. Composable: useMouse
+        // ========================================
+        const mouse = reactive({ x: 0, y: 0 })
+        const trackerEl = ref(null)
+
+        function handleMouseMove(event) {
+          const rect = event.currentTarget.getBoundingClientRect()
+          mouse.x = Math.round(event.clientX - rect.left)
+          mouse.y = Math.round(event.clientY - rect.top)
+        }
+
+        // クリーンアップ
+        onUnmounted(() => {
+          if (intervalId) clearInterval(intervalId)
+          if (debounceTimer) clearTimeout(debounceTimer)
+        })
+
+        return {
+          message, user,
+          searchQuery, sortOrder, items, filteredAndSorted,
+          watchInput, watchResult, isWatching,
+          elapsedTime, isRunning, laps,
+          startTimer, stopTimer, resetTimer, recordLap, formatTime,
+          mouse, trackerEl, handleMouseMove,
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

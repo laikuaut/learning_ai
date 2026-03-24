@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>じゃんけんゲーム</title>
+  <!--
+    ==============================
+    じゃんけんゲーム
+    第3章・第4章の総合サンプル
+    ==============================
+    学べる内容:
+      - 条件分岐（if, else if, switch）
+      - Math.random() による乱数生成
+      - 関数の定義と呼び出し
+      - オブジェクトのデータ管理
+      - DOM操作とイベント処理
+      - CSS アニメーション
+    実行方法:
+      ブラウザでこのファイルを開くだけで動作します
+    ==============================
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .game-container {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    h1 { color: #2c3e50; margin-bottom: 8px; }
+    .subtitle { color: #7f8c8d; font-size: 0.9rem; margin-bottom: 24px; }
+    .score-board {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+    .score-item {
+      text-align: center;
+    }
+    .score-item .label {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+    }
+    .score-item .value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .battle-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      margin: 24px 0;
+      min-height: 120px;
+    }
+    .hand {
+      font-size: 4rem;
+      transition: transform 0.3s;
+    }
+    .hand.shake {
+      animation: shake 0.5s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateY(0); }
+      25% { transform: translateY(-15px); }
+      50% { transform: translateY(5px); }
+      75% { transform: translateY(-8px); }
+    }
+    .vs {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #e74c3c;
+    }
+    .hand-label {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      margin-top: 4px;
+    }
+    .result-message {
+      font-size: 1.5rem;
+      font-weight: bold;
+      min-height: 2em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .result-win { color: #27ae60; }
+    .result-lose { color: #e74c3c; }
+    .result-draw { color: #f39c12; }
+    .choices {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .choice-btn {
+      width: 100px;
+      height: 100px;
+      border: 3px solid #ddd;
+      border-radius: 16px;
+      background: white;
+      font-size: 2.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .choice-btn:hover {
+      border-color: #667eea;
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .choice-btn:active { transform: translateY(0); }
+    .choice-btn .label {
+      font-size: 0.7rem;
+      color: #7f8c8d;
+    }
+    .stats {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .stats-item {
+      text-align: center;
+    }
+    .reset-btn {
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .reset-btn:hover { background: #c0392b; }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>じゃんけんゲーム</h1>
+    <p class="subtitle">グー・チョキ・パーを選んで勝負！</p>
+
+    <div class="score-board">
+      <div class="score-item">
+        <div class="label">あなた</div>
+        <div class="value" id="playerScore">0</div>
+      </div>
+      <div class="score-item">
+        <div class="label">引き分け</div>
+        <div class="value" id="drawScore">0</div>
+      </div>
+      <div class="score-item">
+        <div class="label">コンピュータ</div>
+        <div class="value" id="cpuScore">0</div>
+      </div>
+    </div>
+
+    <div class="battle-area">
+      <div>
+        <div class="hand" id="playerHand">❓</div>
+        <div class="hand-label">あなた</div>
+      </div>
+      <div class="vs">VS</div>
+      <div>
+        <div class="hand" id="cpuHand">❓</div>
+        <div class="hand-label">CPU</div>
+      </div>
+    </div>
+
+    <div class="result-message" id="resultMessage">手を選んでください！</div>
+
+    <div class="choices">
+      <button class="choice-btn" data-hand="rock">
+        ✊
+        <span class="label">グー</span>
+      </button>
+      <button class="choice-btn" data-hand="scissors">
+        ✌️
+        <span class="label">チョキ</span>
+      </button>
+      <button class="choice-btn" data-hand="paper">
+        ✋
+        <span class="label">パー</span>
+      </button>
+    </div>
+
+    <div class="stats">
+      <strong>統計情報</strong>
+      <div class="stats-grid">
+        <div class="stats-item">勝率: <strong id="winRate">0%</strong></div>
+        <div class="stats-item">対戦数: <strong id="totalGames">0</strong></div>
+        <div class="stats-item">連勝: <strong id="streak">0</strong></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn">リセット</button>
+  </div>
+
+  <script>
+    // --- 定数の定義 ---
+    const HANDS = {
+      rock: { emoji: "✊", name: "グー" },
+      scissors: { emoji: "✌️", name: "チョキ" },
+      paper: { emoji: "✋", name: "パー" }
+    };
+
+    // じゃんけんの勝敗テーブル（キーがバリューに勝つ）
+    const WINS_AGAINST = {
+      rock: "scissors",     // グーはチョキに勝つ
+      scissors: "paper",    // チョキはパーに勝つ
+      paper: "rock"         // パーはグーに勝つ
+    };
+
+    // --- ゲームの状態 ---
+    const gameState = {
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      currentStreak: 0,
+      maxStreak: 0
+    };
+
+    // --- DOM要素 ---
+    const playerHandEl = document.getElementById("playerHand");
+    const cpuHandEl = document.getElementById("cpuHand");
+    const resultMessage = document.getElementById("resultMessage");
+    const playerScoreEl = document.getElementById("playerScore");
+    const cpuScoreEl = document.getElementById("cpuScore");
+    const drawScoreEl = document.getElementById("drawScore");
+    const winRateEl = document.getElementById("winRate");
+    const totalGamesEl = document.getElementById("totalGames");
+    const streakEl = document.getElementById("streak");
+
+    // --- コンピュータの手をランダムに選ぶ関数 ---
+    function getComputerHand() {
+      const hands = Object.keys(HANDS);
+      const randomIndex = Math.floor(Math.random() * hands.length);
+      return hands[randomIndex];
+    }
+
+    // --- 勝敗を判定する関数 ---
+    function judge(playerHand, cpuHand) {
+      if (playerHand === cpuHand) return "draw";
+      if (WINS_AGAINST[playerHand] === cpuHand) return "win";
+      return "lose";
+    }
+
+    // --- 統計を更新する関数 ---
+    function updateStats() {
+      const total = gameState.wins + gameState.losses + gameState.draws;
+      const rate = total > 0 ? Math.round((gameState.wins / total) * 100) : 0;
+
+      playerScoreEl.textContent = gameState.wins;
+      cpuScoreEl.textContent = gameState.losses;
+      drawScoreEl.textContent = gameState.draws;
+      winRateEl.textContent = `${rate}%`;
+      totalGamesEl.textContent = total;
+      streakEl.textContent = gameState.currentStreak;
+    }
+
+    // --- ゲームを実行する関数 ---
+    function play(playerChoice) {
+      const cpuChoice = getComputerHand();
+      const result = judge(playerChoice, cpuChoice);
+
+      // 手を表示（アニメーション付き）
+      playerHandEl.textContent = HANDS[playerChoice].emoji;
+      cpuHandEl.textContent = HANDS[cpuChoice].emoji;
+
+      playerHandEl.classList.remove("shake");
+      cpuHandEl.classList.remove("shake");
+      // リフロー強制でアニメーションをリセット
+      void playerHandEl.offsetWidth;
+      playerHandEl.classList.add("shake");
+      cpuHandEl.classList.add("shake");
+
+      // 結果のメッセージと色を設定
+      switch (result) {
+        case "win":
+          resultMessage.textContent = `勝ち！ ${HANDS[playerChoice].name} > ${HANDS[cpuChoice].name}`;
+          resultMessage.className = "result-message result-win";
+          gameState.wins++;
+          gameState.currentStreak++;
+          break;
+        case "lose":
+          resultMessage.textContent = `負け... ${HANDS[cpuChoice].name} > ${HANDS[playerChoice].name}`;
+          resultMessage.className = "result-message result-lose";
+          gameState.losses++;
+          gameState.currentStreak = 0;
+          break;
+        case "draw":
+          resultMessage.textContent = `あいこ！ 両方 ${HANDS[playerChoice].name}`;
+          resultMessage.className = "result-message result-draw";
+          gameState.draws++;
+          break;
+      }
+
+      if (gameState.currentStreak > gameState.maxStreak) {
+        gameState.maxStreak = gameState.currentStreak;
+      }
+
+      updateStats();
+    }
+
+    // --- イベント登録（イベント委譲） ---
+    document.querySelector(".choices").addEventListener("click", (e) => {
+      const btn = e.target.closest(".choice-btn");
+      if (!btn) return;
+      play(btn.dataset.hand);
+    });
+
+    // --- リセット ---
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      gameState.wins = 0;
+      gameState.losses = 0;
+      gameState.draws = 0;
+      gameState.currentStreak = 0;
+      gameState.maxStreak = 0;
+
+      playerHandEl.textContent = "❓";
+      cpuHandEl.textContent = "❓";
+      resultMessage.textContent = "手を選んでください！";
+      resultMessage.className = "result-message";
+      updateStats();
+    });
+
+    // --- キーボードショートカット ---
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "1" || e.key === "g") play("rock");
+      else if (e.key === "2" || e.key === "c") play("scissors");
+      else if (e.key === "3" || e.key === "p") play("paper");
+    });
+  </script>
+</body>
+</html>

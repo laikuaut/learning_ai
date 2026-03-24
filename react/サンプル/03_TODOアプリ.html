@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>03 TODOアプリ</title>
+  <!--
+    ========================================
+    学べる内容:
+    - CRUD操作（作成・読取・更新・削除）
+    - リスト表示（map）とkey
+    - フィルタリング機能
+    - 条件付きレンダリング
+    - 複数のstateの組み合わせ
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background-color: #f0f2f5; }
+    .app { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #00b4d8, #0077b6); color: white; padding: 24px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header h1 { font-size: 24px; margin-bottom: 4px; }
+    .header p { opacity: 0.8; font-size: 14px; }
+    .main { background: white; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .input-area { display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid #e9ecef; }
+    .input-area input { flex: 1; padding: 10px 14px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    .input-area input:focus { border-color: #00b4d8; }
+    .input-area button { padding: 10px 20px; border: none; border-radius: 8px; background: #00b4d8; color: white; font-size: 15px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .input-area button:hover { background: #0096c7; }
+    .filters { display: flex; gap: 4px; padding: 12px 16px; border-bottom: 1px solid #e9ecef; background: #f8f9fa; }
+    .filter-btn { padding: 6px 14px; border: none; border-radius: 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; background: transparent; color: #666; }
+    .filter-btn.active { background: #00b4d8; color: white; }
+    .filter-btn:hover:not(.active) { background: #e9ecef; }
+    .todo-list { list-style: none; }
+    .todo-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f0f2f5; transition: background 0.2s; }
+    .todo-item:hover { background: #f8f9fa; }
+    .todo-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #00b4d8; }
+    .todo-text { flex: 1; font-size: 15px; transition: all 0.3s; }
+    .todo-text.completed { text-decoration: line-through; color: #adb5bd; }
+    .edit-input { flex: 1; padding: 6px 10px; border: 2px solid #00b4d8; border-radius: 6px; font-size: 15px; outline: none; }
+    .todo-actions { display: flex; gap: 4px; }
+    .todo-actions button { padding: 4px 10px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+    .btn-edit { background: #e9ecef; color: #495057; }
+    .btn-edit:hover { background: #dee2e6; }
+    .btn-delete { background: #ffe3e3; color: #c92a2a; }
+    .btn-delete:hover { background: #ffc9c9; }
+    .btn-save { background: #d3f9d8; color: #2b8a3e; }
+    .btn-save:hover { background: #b2f2bb; }
+    .btn-cancel { background: #e9ecef; color: #495057; }
+    .footer { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; color: #868e96; font-size: 13px; }
+    .clear-btn { padding: 4px 12px; border: 1px solid #dee2e6; border-radius: 6px; background: white; color: #868e96; font-size: 13px; cursor: pointer; }
+    .clear-btn:hover { background: #f8f9fa; }
+    .empty { text-align: center; padding: 40px; color: #adb5bd; }
+    .empty span { font-size: 48px; display: block; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      // ========================================
+      // state: アプリの状態を管理
+      // todos → タスクの配列
+      // input → 入力欄のテキスト
+      // filter → フィルター（all / active / completed）
+      // editingId → 編集中のタスクID（nullなら編集なし）
+      // ========================================
+      const [todos, setTodos] = useState([
+        { id: 1, text: 'Reactの基礎を学ぶ', completed: true },
+        { id: 2, text: 'TODOアプリを作る', completed: false },
+        { id: 3, text: 'コンポーネントを理解する', completed: false },
+      ]);
+      const [input, setInput] = useState('');
+      const [filter, setFilter] = useState('all');
+      const [editingId, setEditingId] = useState(null);
+      const [editText, setEditText] = useState('');
+
+      // === Create（作成）===
+      const addTodo = () => {
+        if (!input.trim()) return;
+        setTodos(prev => [...prev, {
+          id: Date.now(),
+          text: input.trim(),
+          completed: false,
+        }]);
+        setInput('');
+      };
+
+      // === Update（更新）===
+      const toggleTodo = (id) => {
+        setTodos(prev => prev.map(todo =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        ));
+      };
+
+      const startEdit = (todo) => {
+        setEditingId(todo.id);
+        setEditText(todo.text);
+      };
+
+      const saveEdit = (id) => {
+        if (!editText.trim()) return;
+        setTodos(prev => prev.map(todo =>
+          todo.id === id ? { ...todo, text: editText.trim() } : todo
+        ));
+        setEditingId(null);
+      };
+
+      const cancelEdit = () => {
+        setEditingId(null);
+      };
+
+      // === Delete（削除）===
+      const deleteTodo = (id) => {
+        setTodos(prev => prev.filter(todo => todo.id !== id));
+      };
+
+      const clearCompleted = () => {
+        setTodos(prev => prev.filter(todo => !todo.completed));
+      };
+
+      // === Read（フィルタリングして表示）===
+      const filteredTodos = todos.filter(todo => {
+        if (filter === 'active') return !todo.completed;
+        if (filter === 'completed') return todo.completed;
+        return true;
+      });
+
+      const remaining = todos.filter(t => !t.completed).length;
+
+      return (
+        <div className="app">
+          <div className="header">
+            <h1>TODO アプリ</h1>
+            <p>タスクを管理しよう</p>
+          </div>
+
+          <div className="main">
+            {/* 入力エリア */}
+            <div className="input-area">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addTodo()}
+                placeholder="新しいタスクを入力..."
+              />
+              <button onClick={addTodo}>追加</button>
+            </div>
+
+            {/* フィルター */}
+            <div className="filters">
+              {['all', 'active', 'completed'].map(f => (
+                <button
+                  key={f}
+                  className={`filter-btn ${filter === f ? 'active' : ''}`}
+                  onClick={() => setFilter(f)}
+                >
+                  {f === 'all' ? 'すべて' : f === 'active' ? '未完了' : '完了済み'}
+                </button>
+              ))}
+            </div>
+
+            {/* タスクリスト */}
+            {filteredTodos.length === 0 ? (
+              <div className="empty">
+                <span>{filter === 'completed' ? '🎉' : '📝'}</span>
+                {filter === 'completed'
+                  ? '完了したタスクはありません'
+                  : filter === 'active'
+                  ? 'すべてのタスクが完了しています！'
+                  : 'タスクを追加してみましょう'
+                }
+              </div>
+            ) : (
+              <ul className="todo-list">
+                {filteredTodos.map(todo => (
+                  <li key={todo.id} className="todo-item">
+                    <input
+                      type="checkbox"
+                      checked={todo.completed}
+                      onChange={() => toggleTodo(todo.id)}
+                    />
+
+                    {editingId === todo.id ? (
+                      <>
+                        <input
+                          className="edit-input"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEdit(todo.id);
+                            if (e.key === 'Escape') cancelEdit();
+                          }}
+                          autoFocus
+                        />
+                        <div className="todo-actions">
+                          <button className="btn-save" onClick={() => saveEdit(todo.id)}>保存</button>
+                          <button className="btn-cancel" onClick={cancelEdit}>取消</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`todo-text ${todo.completed ? 'completed' : ''}`}>
+                          {todo.text}
+                        </span>
+                        <div className="todo-actions">
+                          <button className="btn-edit" onClick={() => startEdit(todo)}>編集</button>
+                          <button className="btn-delete" onClick={() => deleteTodo(todo.id)}>削除</button>
+                        </div>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* フッター */}
+            <div className="footer">
+              <span>残り {remaining} 件</span>
+              {todos.some(t => t.completed) && (
+                <button className="clear-btn" onClick={clearCompleted}>
+                  完了済みを削除
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

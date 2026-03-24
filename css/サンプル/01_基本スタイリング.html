@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01: CSS基本スタイリング</title>
+  <!--
+    学べる内容:
+      - CSSセレクタの基本（要素、クラス、ID、属性セレクタ）
+      - 色の指定方法（名前、HEX、RGB、HSL）
+      - フォントとテキストのスタイリング
+      - 背景のスタイリング
+      - 詳細度（Specificity）の基本
+    実行方法:
+      ブラウザでこのHTMLファイルを開いてください
+  -->
+  <style>
+    /* === リセットと基本設定 === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    /* === 要素セレクタ === */
+    h1 {
+      color: #2c3e50;
+      font-size: 1.8em;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #2980b9;
+      font-size: 1.3em;
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 10px;
+    }
+
+    /* === クラスセレクタ（.クラス名） === */
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .label {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    /* === IDセレクタ（#ID名） === */
+    #main-title {
+      text-align: center;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      border-bottom: none;
+      margin-bottom: 30px;
+    }
+
+    /* === 色の指定方法 === */
+    .color-name   { background-color: tomato; color: white; }
+    .color-hex    { background-color: #3498db; color: white; }
+    .color-rgb    { background-color: rgb(46, 204, 113); color: white; }
+    .color-rgba   { background-color: rgba(155, 89, 182, 0.8); color: white; }
+    .color-hsl    { background-color: hsl(48, 100%, 50%); color: #333; }
+
+    /* === フォントスタイル === */
+    .font-serif {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: 1.1em;
+    }
+
+    .font-mono {
+      font-family: "Courier New", "Consolas", monospace;
+      background-color: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .text-bold   { font-weight: bold; }
+    .text-italic { font-style: italic; }
+    .text-underline { text-decoration: underline; }
+    .text-line-through { text-decoration: line-through; color: #999; }
+    .text-uppercase { text-transform: uppercase; }
+    .text-center { text-align: center; }
+    .text-right  { text-align: right; }
+
+    .text-shadow {
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      font-size: 1.3em;
+      color: #2c3e50;
+    }
+
+    .text-spacing {
+      letter-spacing: 0.3em;
+      word-spacing: 0.5em;
+    }
+
+    /* === 背景スタイル === */
+    .bg-gradient {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .bg-pattern {
+      background-color: #ecf0f1;
+      background-image:
+        linear-gradient(45deg, #bdc3c7 25%, transparent 25%),
+        linear-gradient(-45deg, #bdc3c7 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #bdc3c7 75%),
+        linear-gradient(-45deg, transparent 75%, #bdc3c7 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    /* === 属性セレクタ === */
+    a[href^="https"] {
+      color: #27ae60;
+    }
+
+    a[href$=".pdf"] {
+      color: #e74c3c;
+    }
+
+    a[href$=".pdf"]::after {
+      content: " [PDF]";
+      font-size: 0.8em;
+    }
+
+    /* === 子孫セレクタ・子セレクタ === */
+    .nav-list {
+      list-style: none;
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background-color: #2c3e50;
+      border-radius: 6px;
+    }
+
+    .nav-list > li > a {
+      color: #ecf0f1;
+      text-decoration: none;
+      padding: 5px 15px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    .nav-list > li > a:hover {
+      background-color: #34495e;
+    }
+
+    /* === 詳細度のデモ === */
+    .specificity-demo p { color: blue; }        /* 詳細度: 0-1-1 */
+    .specificity-demo .highlight { color: green; } /* 詳細度: 0-2-0 */
+    #special-text { color: red; }               /* 詳細度: 1-0-0 */
+
+    /* === コード表示用 === */
+    code {
+      font-family: "Consolas", "Courier New", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="main-title">CSS基本スタイリング サンプル</h1>
+
+  <!-- セレクタと色 -->
+  <div class="section">
+    <h2>1. 色の指定方法</h2>
+    <p>CSSでは色をさまざまな方法で指定できます。</p>
+    <p><span class="label color-name">色名: tomato</span></p>
+    <p><span class="label color-hex">HEX: #3498db</span></p>
+    <p><span class="label color-rgb">RGB: rgb(46, 204, 113)</span></p>
+    <p><span class="label color-rgba">RGBA: rgba(155, 89, 182, 0.8)</span></p>
+    <p><span class="label color-hsl">HSL: hsl(48, 100%, 50%)</span></p>
+  </div>
+
+  <!-- フォントとテキスト -->
+  <div class="section">
+    <h2>2. フォントとテキストのスタイリング</h2>
+    <p class="font-serif">セリフ体（font-family: Georgia）で表示されます。</p>
+    <p>等幅フォント: <span class="font-mono">console.log("Hello")</span></p>
+    <p>
+      <span class="text-bold">太字 (bold)</span> /
+      <span class="text-italic">斜体 (italic)</span> /
+      <span class="text-underline">下線 (underline)</span> /
+      <span class="text-line-through">取り消し線</span>
+    </p>
+    <p class="text-uppercase">uppercase transform</p>
+    <p class="text-center">テキスト中央揃え (text-align: center)</p>
+    <p class="text-right">テキスト右揃え (text-align: right)</p>
+    <p class="text-shadow">テキストシャドウの効果</p>
+    <p class="text-spacing">文字間隔と単語間隔を広げたテキスト</p>
+  </div>
+
+  <!-- 背景 -->
+  <div class="section">
+    <h2>3. 背景のスタイリング</h2>
+    <div class="bg-gradient">
+      <p>グラデーション背景（linear-gradient）</p>
+    </div>
+    <br>
+    <div class="bg-pattern">
+      <p>CSSだけで作るチェック柄パターン</p>
+    </div>
+  </div>
+
+  <!-- 属性セレクタ -->
+  <div class="section">
+    <h2>4. 属性セレクタ</h2>
+    <p>
+      <a href="https://example.com">https で始まるリンク（緑色）</a><br>
+      <a href="document.pdf">PDF リンク（赤色 + [PDF]マーク）</a><br>
+      <a href="page.html">通常のリンク</a>
+    </p>
+  </div>
+
+  <!-- ナビゲーション -->
+  <div class="section">
+    <h2>5. 子孫セレクタとホバー効果</h2>
+    <ul class="nav-list">
+      <li><a href="#">ホーム</a></li>
+      <li><a href="#">製品</a></li>
+      <li><a href="#">会社概要</a></li>
+      <li><a href="#">お問い合わせ</a></li>
+    </ul>
+    <p>上のナビゲーションにマウスを乗せると背景色が変わります。</p>
+  </div>
+
+  <!-- 詳細度 -->
+  <div class="section specificity-demo">
+    <h2>6. 詳細度（Specificity）のデモ</h2>
+    <p>この段落はクラスの影響で青色です（0-1-1）。</p>
+    <p class="highlight">このテキストはクラスが2つ適用されて緑色です（0-2-0）。</p>
+    <p class="highlight" id="special-text">IDセレクタが最優先で赤色です（1-0-0）。</p>
+    <p>詳細度: <code>ID(1-0-0)</code> &gt; <code>クラス(0-1-0)</code> &gt; <code>要素(0-0-1)</code></p>
+  </div>
+</body>
+</html>

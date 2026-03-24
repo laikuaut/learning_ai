@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 カウンターアプリ</title>
+  <!--
+    ========================================
+    学べる内容:
+    - useState でのstate管理
+    - イベントハンドラ（onClick, onChange）
+    - stateの更新と再レンダリング
+    - 複数のstateを組み合わせた動的UI
+
+    実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    ========================================
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background-color: #1a1a2e; color: #eee; min-height: 100vh; }
+    .app { max-width: 500px; margin: 0 auto; padding: 40px 20px; }
+    h1 { text-align: center; font-size: 24px; margin-bottom: 32px; color: #e94560; }
+    .counter-box { background: #16213e; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .count-display { font-size: 80px; font-family: 'Courier New', monospace; margin: 20px 0; transition: color 0.3s; }
+    .button-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; font-weight: bold; }
+    .btn:hover { transform: scale(1.05); }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary { background: #e94560; color: white; }
+    .btn-secondary { background: #0f3460; color: white; }
+    .btn-success { background: #00b894; color: white; }
+    .btn-warning { background: #fdcb6e; color: #333; }
+    .btn-danger { background: #d63031; color: white; }
+    .step-control { margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .step-input { width: 80px; padding: 8px; border: 2px solid #0f3460; border-radius: 8px; text-align: center; font-size: 18px; background: #1a1a2e; color: white; }
+    .history { background: #16213e; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .history h2 { font-size: 18px; margin-bottom: 12px; color: #e94560; }
+    .history-item { padding: 8px 12px; border-bottom: 1px solid #0f3460; font-family: monospace; font-size: 14px; display: flex; justify-content: space-between; }
+    .history-item:last-child { border-bottom: none; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: #16213e; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    .stat-value { font-size: 24px; font-weight: bold; color: #e94560; }
+    .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      // ========================================
+      // useState：状態を管理するフック
+      // [現在の値, 更新関数] = useState(初期値)
+      // 更新関数を呼ぶと、コンポーネントが再レンダリングされる
+      // ========================================
+      const [count, setCount] = useState(0);
+      const [step, setStep] = useState(1);
+      const [history, setHistory] = useState([]);
+
+      // カウントの色を値に応じて変化させる
+      const countColor = count > 0 ? '#00b894' : count < 0 ? '#d63031' : '#dfe6e9';
+
+      // 操作関数
+      const updateCount = (newCount, action) => {
+        setCount(newCount);
+        setHistory(prev => [
+          { value: newCount, action, time: new Date().toLocaleTimeString() },
+          ...prev.slice(0, 9),  // 直近10件まで保持
+        ]);
+      };
+
+      const increment = () => updateCount(count + step, `+${step}`);
+      const decrement = () => updateCount(count - step, `-${step}`);
+      const reset = () => {
+        setCount(0);
+        setHistory([]);
+      };
+      const double = () => updateCount(count * 2, 'x2');
+      const half = () => updateCount(Math.floor(count / 2), '÷2');
+
+      // 統計情報
+      const maxValue = history.length > 0 ? Math.max(...history.map(h => h.value)) : 0;
+      const minValue = history.length > 0 ? Math.min(...history.map(h => h.value)) : 0;
+
+      return (
+        <div className="app">
+          <h1>カウンターアプリ</h1>
+
+          {/* 統計 */}
+          <div className="stats">
+            <div className="stat-card">
+              <div className="stat-value">{maxValue}</div>
+              <div className="stat-label">最大値</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{history.length}</div>
+              <div className="stat-label">操作回数</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{minValue}</div>
+              <div className="stat-label">最小値</div>
+            </div>
+          </div>
+
+          {/* メインカウンター */}
+          <div className="counter-box">
+            <div className="count-display" style={{ color: countColor }}>
+              {count}
+            </div>
+
+            <div className="button-row">
+              <button className="btn btn-danger" onClick={decrement}>
+                -{step}
+              </button>
+              <button className="btn btn-secondary" onClick={half}>÷2</button>
+              <button className="btn btn-warning" onClick={reset}>リセット</button>
+              <button className="btn btn-secondary" onClick={double}>x2</button>
+              <button className="btn btn-success" onClick={increment}>
+                +{step}
+              </button>
+            </div>
+
+            {/* ステップ設定 */}
+            <div className="step-control">
+              <span style={{ color: '#888' }}>ステップ:</span>
+              <input
+                type="number"
+                className="step-input"
+                value={step}
+                min="1"
+                max="100"
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val > 0) setStep(val);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 操作履歴 */}
+          {history.length > 0 && (
+            <div className="history">
+              <h2>操作履歴</h2>
+              {history.map((item, index) => (
+                <div key={index} className="history-item">
+                  <span style={{ color: '#888' }}>{item.time}</span>
+                  <span>{item.action}</span>
+                  <span style={{ color: item.value >= 0 ? '#00b894' : '#d63031' }}>
+                    → {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

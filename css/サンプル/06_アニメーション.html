@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06: CSSアニメーション</title>
+  <!--
+    学べる内容:
+      - transition（トランジション）の基本
+      - transition のプロパティ（duration, timing-function, delay）
+      - transform（変形）: translate, rotate, scale, skew
+      - @keyframes によるアニメーション定義
+      - animation プロパティの設定
+      - animation-timing-function（イージング）
+      - 実践的なアニメーション例（ボタン、ローディング、カード）
+    実行方法:
+      ブラウザでこのHTMLファイルを開いて、各要素にマウスを乗せたりクリックしたりしてください
+  -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      animation: fadeInDown 0.8s ease-out;
+    }
+
+    h2 {
+      color: #8e44ad;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .section {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .demo-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    code {
+      font-family: "Consolas", monospace;
+      background-color: #f0f0f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    /* === 1. Transition の基本 === */
+    .transition-box {
+      width: 120px;
+      height: 120px;
+      background-color: #3498db;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.85em;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .t-color {
+      transition: background-color 0.5s ease;
+    }
+    .t-color:hover {
+      background-color: #e74c3c;
+    }
+
+    .t-size {
+      transition: transform 0.3s ease;
+    }
+    .t-size:hover {
+      transform: scale(1.3);
+    }
+
+    .t-shadow {
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .t-shadow:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transform: translateY(-5px);
+    }
+
+    .t-radius {
+      transition: border-radius 0.5s ease;
+    }
+    .t-radius:hover {
+      border-radius: 50%;
+    }
+
+    .t-multi {
+      transition: all 0.5s ease;
+    }
+    .t-multi:hover {
+      background-color: #2ecc71;
+      transform: rotate(10deg) scale(1.1);
+      border-radius: 20px;
+    }
+
+    /* === 2. Transform === */
+    .transform-box {
+      width: 100px;
+      height: 100px;
+      background-color: #9b59b6;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.8em;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .tf-translate:hover { transform: translate(20px, -10px); }
+    .tf-rotate:hover    { transform: rotate(45deg); }
+    .tf-scale:hover     { transform: scale(1.5); }
+    .tf-skew:hover      { transform: skewX(15deg); }
+    .tf-combo:hover     { transform: rotate(15deg) scale(1.2) translate(10px, -10px); }
+
+    /* === 3. @keyframes アニメーション === */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      25% { transform: translateY(-20px); }
+      50% { transform: translateY(0); }
+      75% { transform: translateY(-10px); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes colorShift {
+      0%   { background-color: #3498db; }
+      25%  { background-color: #2ecc71; }
+      50%  { background-color: #e74c3c; }
+      75%  { background-color: #f39c12; }
+      100% { background-color: #3498db; }
+    }
+
+    .anim-box {
+      width: 100px;
+      height: 100px;
+      background-color: #e74c3c;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.8em;
+      text-align: center;
+    }
+
+    .a-bounce  { animation: bounce 1s ease infinite; }
+    .a-pulse   { animation: pulse 1.5s ease-in-out infinite; }
+    .a-spin    { animation: spin 2s linear infinite; }
+    .a-slidein { animation: slideIn 1s ease-out; }
+    .a-color   { animation: colorShift 4s ease infinite; }
+
+    /* === 4. ボタンアニメーション === */
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-ripple {
+      background-color: #3498db;
+      transition: background-color 0.3s;
+    }
+    .btn-ripple:hover {
+      background-color: #2980b9;
+    }
+    .btn-ripple:active {
+      transform: scale(0.95);
+    }
+
+    .btn-slide {
+      background-color: #2ecc71;
+      transition: all 0.3s ease;
+    }
+    .btn-slide:hover {
+      background-color: #27ae60;
+      padding-right: 40px;
+    }
+    .btn-slide:hover::after {
+      content: " \2192";
+      position: absolute;
+      right: 15px;
+      animation: fadeInDown 0.3s ease;
+    }
+
+    .btn-glow {
+      background-color: #9b59b6;
+      transition: box-shadow 0.3s;
+    }
+    .btn-glow:hover {
+      box-shadow: 0 0 15px rgba(155, 89, 182, 0.6),
+                  0 0 30px rgba(155, 89, 182, 0.3);
+    }
+
+    /* === 5. ローディングスピナー === */
+    .loader-container {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+
+    .loader-item {
+      text-align: center;
+    }
+
+    .loader-item p {
+      margin-top: 10px;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    /* スピナー1: 回転リング */
+    .spinner-ring {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #eee;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    /* スピナー2: ドットバウンス */
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    .spinner-dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .spinner-dots .dot {
+      width: 12px;
+      height: 12px;
+      background-color: #e74c3c;
+      border-radius: 50%;
+      animation: dotBounce 1.4s ease-in-out infinite;
+    }
+
+    .spinner-dots .dot:nth-child(1) { animation-delay: 0s; }
+    .spinner-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+    .spinner-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* スピナー3: パルスリング */
+    @keyframes pulseRing {
+      0% {
+        transform: scale(0.5);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+    }
+
+    .spinner-pulse {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #2ecc71;
+      animation: pulseRing 1.2s ease-out infinite;
+      margin: 0 auto;
+    }
+
+    /* === 6. カードホバーアニメーション === */
+    .anim-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .anim-card {
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      border: 1px solid #eee;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+
+    .anim-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .anim-card .icon {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      transition: transform 0.3s ease;
+    }
+
+    .anim-card:hover .icon {
+      transform: scale(1.2);
+    }
+
+    .anim-card h4 {
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .anim-card p {
+      color: #666;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <h1>CSSアニメーション サンプル</h1>
+
+  <!-- Transition -->
+  <div class="section">
+    <h2>1. Transition（ホバーで変化）</h2>
+    <p>各ボックスにマウスを乗せてみましょう。</p>
+    <div class="demo-area">
+      <div class="transition-box t-color">背景色<br>変化</div>
+      <div class="transition-box t-size">拡大<br>(scale)</div>
+      <div class="transition-box t-shadow">影 +<br>浮き上がり</div>
+      <div class="transition-box t-radius">角丸<br>→ 円</div>
+      <div class="transition-box t-multi">複合<br>transition</div>
+    </div>
+  </div>
+
+  <!-- Transform -->
+  <div class="section">
+    <h2>2. Transform（変形）</h2>
+    <p>各ボックスにマウスを乗せると変形します。</p>
+    <div class="demo-area">
+      <div class="transform-box tf-translate">translate<br>(移動)</div>
+      <div class="transform-box tf-rotate">rotate<br>(回転)</div>
+      <div class="transform-box tf-scale">scale<br>(拡大)</div>
+      <div class="transform-box tf-skew">skew<br>(傾斜)</div>
+      <div class="transform-box tf-combo">複合<br>transform</div>
+    </div>
+  </div>
+
+  <!-- @keyframes -->
+  <div class="section">
+    <h2>3. @keyframes アニメーション</h2>
+    <p><code>@keyframes</code> でアニメーションを定義し、<code>animation</code> プロパティで適用します。</p>
+    <div class="demo-area">
+      <div class="anim-box a-bounce">bounce</div>
+      <div class="anim-box a-pulse">pulse</div>
+      <div class="anim-box a-spin" style="border-radius: 50%;">spin</div>
+      <div class="anim-box a-slidein">slideIn</div>
+      <div class="anim-box a-color">color<br>shift</div>
+    </div>
+  </div>
+
+  <!-- ボタン -->
+  <div class="section">
+    <h2>4. ボタンアニメーション</h2>
+    <div class="demo-area">
+      <button class="btn btn-ripple">クリック効果</button>
+      <button class="btn btn-slide">ホバーでスライド</button>
+      <button class="btn btn-glow">グロー効果</button>
+    </div>
+  </div>
+
+  <!-- ローディング -->
+  <div class="section">
+    <h2>5. ローディングスピナー</h2>
+    <div class="loader-container">
+      <div class="loader-item">
+        <div class="spinner-ring"></div>
+        <p>リングスピナー</p>
+      </div>
+      <div class="loader-item">
+        <div class="spinner-dots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+        <p>ドットバウンス</p>
+      </div>
+      <div class="loader-item">
+        <div class="spinner-pulse"></div>
+        <p>パルスリング</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- カードホバー -->
+  <div class="section">
+    <h2>6. カードホバーアニメーション</h2>
+    <div class="anim-card-grid">
+      <div class="anim-card">
+        <div class="icon">&#128187;</div>
+        <h4>Web開発</h4>
+        <p>HTML/CSS/JSを使ったWeb開発</p>
+      </div>
+      <div class="anim-card">
+        <div class="icon">&#128241;</div>
+        <h4>モバイル</h4>
+        <p>スマートフォンアプリの開発</p>
+      </div>
+      <div class="anim-card">
+        <div class="icon">&#9729;&#65039;</div>
+        <h4>クラウド</h4>
+        <p>AWS/GCPのクラウド基盤</p>
+      </div>
+      <div class="anim-card">
+        <div class="icon">&#128202;</div>
+        <h4>データ分析</h4>
+        <p>Python/SQLでデータ解析</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>配列フィルター</title>
+  <!--
+    ==============================
+    配列フィルター（商品検索アプリ）
+    第5章・第6章の総合サンプル
+    ==============================
+    学べる内容:
+      - 配列メソッド（filter, map, sort, reduce）
+      - オブジェクトの操作
+      - メソッドチェーン
+      - DOM操作による動的リスト生成
+      - 検索・フィルタ・ソート機能
+    実行方法:
+      ブラウザでこのファイルを開くだけで動作します
+    ==============================
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+      background: #f5f6fa;
+      padding: 20px;
+      color: #333;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 24px; }
+    .controls {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .controls-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .controls-row:last-child { margin-bottom: 0; }
+    input[type="text"], select {
+      padding: 10px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input[type="text"] { flex: 1; min-width: 200px; }
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    select { min-width: 150px; cursor: pointer; }
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #ecf0f1;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .product-category {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 8px;
+    }
+    .cat-electronics { background: #3498db; }
+    .cat-food { background: #27ae60; }
+    .cat-clothing { background: #e74c3c; }
+    .cat-books { background: #9b59b6; }
+    .cat-sports { background: #f39c12; }
+    .product-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 4px;
+    }
+    .product-price {
+      font-size: 1.3rem;
+      color: #e74c3c;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .product-details {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      line-height: 1.5;
+    }
+    .product-rating { color: #f39c12; }
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #7f8c8d;
+      font-size: 1.1rem;
+    }
+    .price-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .price-range input[type="number"] {
+      width: 100px;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .price-range input[type="number"]:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>商品フィルター</h1>
+
+    <div class="controls">
+      <div class="controls-row">
+        <input type="text" id="searchInput" placeholder="商品名で検索...">
+        <select id="categoryFilter">
+          <option value="all">全カテゴリ</option>
+          <option value="electronics">電子機器</option>
+          <option value="food">食品</option>
+          <option value="clothing">衣類</option>
+          <option value="books">書籍</option>
+          <option value="sports">スポーツ</option>
+        </select>
+        <select id="sortBy">
+          <option value="default">並び替え</option>
+          <option value="price-asc">価格: 安い順</option>
+          <option value="price-desc">価格: 高い順</option>
+          <option value="rating-desc">評価: 高い順</option>
+          <option value="name-asc">名前: A→Z</option>
+        </select>
+      </div>
+      <div class="controls-row">
+        <div class="price-range">
+          <span>価格:</span>
+          <input type="number" id="minPrice" placeholder="最低" min="0">
+          <span>〜</span>
+          <input type="number" id="maxPrice" placeholder="最高" min="0">
+          <span>円</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="statsBar">
+      <span id="resultCount">0件表示</span>
+      <span id="totalPrice">合計: ¥0</span>
+    </div>
+
+    <div class="product-grid" id="productGrid"></div>
+  </div>
+
+  <script>
+    // --- 商品データ（配列とオブジェクト） ---
+    const products = [
+      { id: 1, name: "ワイヤレスイヤホン", price: 5980, category: "electronics", rating: 4.5, stock: 25 },
+      { id: 2, name: "有機栽培コーヒー豆", price: 1200, category: "food", rating: 4.8, stock: 50 },
+      { id: 3, name: "ランニングシューズ", price: 8900, category: "sports", rating: 4.3, stock: 12 },
+      { id: 4, name: "JavaScript入門書", price: 2800, category: "books", rating: 4.7, stock: 30 },
+      { id: 5, name: "USBケーブル 3本セット", price: 980, category: "electronics", rating: 4.1, stock: 100 },
+      { id: 6, name: "オーガニック紅茶", price: 850, category: "food", rating: 4.4, stock: 40 },
+      { id: 7, name: "ウールセーター", price: 6500, category: "clothing", rating: 4.6, stock: 8 },
+      { id: 8, name: "スマートウォッチ", price: 24800, category: "electronics", rating: 4.2, stock: 15 },
+      { id: 9, name: "プロテインバー 12本入", price: 2400, category: "food", rating: 4.0, stock: 60 },
+      { id: 10, name: "デザインパターン入門", price: 3200, category: "books", rating: 4.9, stock: 20 },
+      { id: 11, name: "ヨガマット", price: 3500, category: "sports", rating: 4.5, stock: 18 },
+      { id: 12, name: "防水ジャケット", price: 12000, category: "clothing", rating: 4.7, stock: 5 },
+      { id: 13, name: "ポータブルSSD 1TB", price: 11800, category: "electronics", rating: 4.8, stock: 22 },
+      { id: 14, name: "抹茶パウダー", price: 1500, category: "food", rating: 4.3, stock: 35 },
+      { id: 15, name: "サッカーボール", price: 4200, category: "sports", rating: 4.1, stock: 10 },
+    ];
+
+    // --- カテゴリの表示名とクラス ---
+    const CATEGORIES = {
+      electronics: { name: "電子機器", class: "cat-electronics" },
+      food: { name: "食品", class: "cat-food" },
+      clothing: { name: "衣類", class: "cat-clothing" },
+      books: { name: "書籍", class: "cat-books" },
+      sports: { name: "スポーツ", class: "cat-sports" }
+    };
+
+    // --- DOM要素 ---
+    const searchInput = document.getElementById("searchInput");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const sortBy = document.getElementById("sortBy");
+    const minPriceInput = document.getElementById("minPrice");
+    const maxPriceInput = document.getElementById("maxPrice");
+    const productGrid = document.getElementById("productGrid");
+    const resultCount = document.getElementById("resultCount");
+    const totalPrice = document.getElementById("totalPrice");
+
+    // --- 星評価を文字列で返す関数 ---
+    function renderStars(rating) {
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return "★".repeat(full) + (half ? "☆" : "") + "☆".repeat(empty);
+    }
+
+    // --- 商品カードのHTMLを生成する関数 ---
+    function createProductCard(product) {
+      const cat = CATEGORIES[product.category];
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.innerHTML = `
+        <span class="product-category ${cat.class}">${cat.name}</span>
+        <div class="product-name">${product.name}</div>
+        <div class="product-price">&yen;${product.price.toLocaleString()}</div>
+        <div class="product-details">
+          <div class="product-rating">${renderStars(product.rating)} ${product.rating}</div>
+          <div>在庫: ${product.stock}個</div>
+        </div>
+      `;
+      return card;
+    }
+
+    // --- フィルタ・ソート・表示の関数 ---
+    function renderProducts() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      const category = categoryFilter.value;
+      const sort = sortBy.value;
+      const minPrice = minPriceInput.value ? Number(minPriceInput.value) : 0;
+      const maxPrice = maxPriceInput.value ? Number(maxPriceInput.value) : Infinity;
+
+      // filter → sort のメソッドチェーン
+      let filtered = products
+        .filter(p => {
+          // 名前検索
+          if (searchTerm && !p.name.toLowerCase().includes(searchTerm)) return false;
+          // カテゴリフィルタ
+          if (category !== "all" && p.category !== category) return false;
+          // 価格範囲
+          if (p.price < minPrice || p.price > maxPrice) return false;
+          return true;
+        });
+
+      // ソート
+      switch (sort) {
+        case "price-asc":
+          filtered.sort((a, b) => a.price - b.price);
+          break;
+        case "price-desc":
+          filtered.sort((a, b) => b.price - a.price);
+          break;
+        case "rating-desc":
+          filtered.sort((a, b) => b.rating - a.rating);
+          break;
+        case "name-asc":
+          filtered.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+      }
+
+      // 統計情報（reduce で合計を計算）
+      const total = filtered.reduce((sum, p) => sum + p.price, 0);
+      resultCount.textContent = `${filtered.length}件 / ${products.length}件表示`;
+      totalPrice.textContent = `合計: \u00a5${total.toLocaleString()}`;
+
+      // DOMの更新
+      productGrid.innerHTML = "";
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = '<div class="no-results">該当する商品がありません</div>';
+        return;
+      }
+
+      // DocumentFragment で効率的にDOM追加
+      const fragment = document.createDocumentFragment();
+      filtered.forEach(product => {
+        fragment.appendChild(createProductCard(product));
+      });
+      productGrid.appendChild(fragment);
+    }
+
+    // --- イベント登録 ---
+    searchInput.addEventListener("input", renderProducts);
+    categoryFilter.addEventListener("change", renderProducts);
+    sortBy.addEventListener("change", renderProducts);
+    minPriceInput.addEventListener("input", renderProducts);
+    maxPriceInput.addEventListener("input", renderProducts);
+
+    // --- 初期表示 ---
+    renderProducts();
+  </script>
+</body>
+</html>

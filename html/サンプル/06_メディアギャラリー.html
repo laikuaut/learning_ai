@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル06：メディアギャラリー
+    ============================================================
+    【学べる内容】
+    - picture要素とsource要素によるレスポンシブ画像
+    - img要素のsrcset/sizes属性による画像の出し分け
+    - figure / figcaption によるキャプション付き画像
+    - video要素で動画を埋め込む（controls, poster, loop等の属性）
+    - audio要素で音声を埋め込む
+    - source要素で複数フォーマットを指定する
+    - loading="lazy" による遅延読み込み
+    - alt属性の適切な書き方
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+    ※ 外部画像はプレースホルダーを使用しています。
+    ※ video/audioは実際のメディアファイルがないため、
+      コントロールUIと代替テキストが表示されます。
+
+    【対応する教材】
+    第3章：画像とマルチメディア
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メディアギャラリー | HTML学習サンプル</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2em 1em;
+      line-height: 1.8;
+      color: #333;
+    }
+    h1 {
+      color: #2e7d32;
+      border-bottom: 3px solid #2e7d32;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+    h2 {
+      color: #2e7d32;
+      margin: 2em 0 0.8em;
+    }
+    h3 {
+      color: #388e3c;
+      margin: 1.5em 0 0.5em;
+    }
+
+    /* ギャラリーグリッド */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5em;
+    }
+
+    /* figure / figcaptionのスタイル */
+    figure {
+      background: #f5f5f5;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    figure img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    figcaption {
+      padding: 0.8em 1em;
+      font-size: 0.9em;
+      color: #555;
+    }
+    figcaption strong {
+      display: block;
+      color: #333;
+      margin-bottom: 0.3em;
+    }
+
+    /* 大きな画像用 */
+    .featured-image {
+      margin: 1em 0;
+    }
+    .featured-image img {
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .featured-image figcaption {
+      text-align: center;
+      font-style: italic;
+    }
+
+    /* メディアプレーヤー */
+    .media-player {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 1.5em;
+      margin: 1em 0;
+    }
+    video, audio {
+      width: 100%;
+      border-radius: 4px;
+    }
+
+    /* 解説ボックス */
+    .explanation {
+      background: #e8f5e9;
+      border-left: 4px solid #2e7d32;
+      padding: 1em 1.2em;
+      margin: 1em 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.95em;
+    }
+    .explanation strong {
+      color: #2e7d32;
+    }
+
+    /* コード表示 */
+    .code-block {
+      background: #263238;
+      color: #e0e0e0;
+      padding: 1em;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.9em;
+      margin: 0.5em 0;
+      white-space: pre;
+    }
+
+    /* レスポンシブ画像デモ */
+    .responsive-demo {
+      background: #fff3e0;
+      padding: 1.5em;
+      border-radius: 8px;
+      margin: 1em 0;
+    }
+    .responsive-demo img {
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    /* テーブル */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.6em 0.8em;
+      text-align: left;
+    }
+    th { background: #e8f5e9; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>メディアギャラリー</h1>
+    <p>
+      HTML5のマルチメディア要素を使って、画像・動画・音声をWebページに
+      埋め込む方法を実践的に学びましょう。
+    </p>
+  </header>
+
+  <main>
+
+    <!-- ========================================
+         セクション1：figure / figcaption による画像ギャラリー
+    ======================================== -->
+    <section>
+      <h2>1. 画像ギャラリー（figure / figcaption）</h2>
+      <p>
+        <code>&lt;figure&gt;</code> と <code>&lt;figcaption&gt;</code> を使うと、
+        画像にキャプション（説明文）を意味的に紐付けることができます。
+        スクリーンリーダーも、画像とキャプションの関係を正しく認識します。
+      </p>
+
+      <div class="gallery">
+        <!--
+          figure要素：自己完結型のコンテンツ（図版）
+          figcaption要素：figureのキャプション（タイトルや説明）
+        -->
+        <figure>
+          <img src="https://via.placeholder.com/400x300/4caf50/ffffff?text=Mountain"
+               alt="朝日に照らされた山脈の風景。山頂に薄い霧がかかっています"
+               loading="lazy">
+          <figcaption>
+            <strong>朝の山脈</strong>
+            早朝の澄んだ空気の中、山脈が美しく輝いています。
+          </figcaption>
+        </figure>
+
+        <figure>
+          <img src="https://via.placeholder.com/400x300/1565c0/ffffff?text=Ocean"
+               alt="夕暮れ時の穏やかな海。水平線がオレンジ色に染まっています"
+               loading="lazy">
+          <figcaption>
+            <strong>夕暮れの海</strong>
+            穏やかな波が砂浜に打ち寄せる夕暮れの風景です。
+          </figcaption>
+        </figure>
+
+        <figure>
+          <img src="https://via.placeholder.com/400x300/f44336/ffffff?text=Autumn"
+               alt="紅葉したもみじの葉のクローズアップ写真"
+               loading="lazy">
+          <figcaption>
+            <strong>秋の紅葉</strong>
+            赤く色づいたもみじが秋の訪れを告げています。
+          </figcaption>
+        </figure>
+
+        <figure>
+          <img src="https://via.placeholder.com/400x300/9c27b0/ffffff?text=Night+Sky"
+               alt="満天の星空。天の川が画面の中央を横切っています"
+               loading="lazy">
+          <figcaption>
+            <strong>満天の星空</strong>
+            光害のない山奥で撮影した天の川の写真です。
+          </figcaption>
+        </figure>
+
+        <figure>
+          <img src="https://via.placeholder.com/400x300/ff9800/ffffff?text=Flower"
+               alt="鮮やかなオレンジ色のガーベラの花のクローズアップ"
+               loading="lazy">
+          <figcaption>
+            <strong>ガーベラ</strong>
+            色鮮やかなガーベラの花をマクロレンズで撮影しました。
+          </figcaption>
+        </figure>
+
+        <!--
+          装飾的な画像にはalt=""（空のalt）を指定します。
+          スクリーンリーダーは読み飛ばします。
+        -->
+        <figure>
+          <img src="https://via.placeholder.com/400x300/607d8b/ffffff?text=City"
+               alt="高層ビルが立ち並ぶ都市の夜景。窓の明かりが光っています"
+               loading="lazy">
+          <figcaption>
+            <strong>都市の夜景</strong>
+            展望台から撮影した東京のスカイラインです。
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="explanation">
+        <strong>学習ポイント：</strong>
+        <code>loading="lazy"</code> 属性を付けると、画像がビューポート（画面表示範囲）に
+        近づいた時に初めて読み込まれます。ページの初期読み込み速度が向上します。
+      </div>
+    </section>
+
+    <!-- ========================================
+         セクション2：picture要素とレスポンシブ画像
+    ======================================== -->
+    <section>
+      <h2>2. レスポンシブ画像（picture要素）</h2>
+      <p>
+        <code>&lt;picture&gt;</code> 要素を使うと、画面サイズやデバイスの特性に応じて
+        最適な画像を出し分けることができます。
+      </p>
+
+      <div class="responsive-demo">
+        <!--
+          picture要素の仕組み：
+          1. ブラウザはsource要素を上から順に評価する
+          2. media属性の条件に合致する最初のsourceの画像を使う
+          3. どのsourceにも合致しなければ、img要素のsrcが使われる（フォールバック）
+        -->
+        <picture>
+          <!--
+            画面幅800px以上の場合：大きな横長画像を表示
+            （media属性でメディアクエリを指定）
+          -->
+          <source media="(min-width: 800px)"
+                  srcset="https://via.placeholder.com/800x300/2e7d32/ffffff?text=Desktop+View+(800px+wide)">
+          <!--
+            画面幅500px以上の場合：中サイズの画像を表示
+          -->
+          <source media="(min-width: 500px)"
+                  srcset="https://via.placeholder.com/500x300/388e3c/ffffff?text=Tablet+View+(500px)">
+          <!--
+            どの条件にも合致しない場合（小さい画面）：
+            img要素の画像がフォールバックとして使われる
+          -->
+          <img src="https://via.placeholder.com/350x300/4caf50/ffffff?text=Mobile+View+(350px)"
+               alt="レスポンシブ画像のデモ。画面幅によって表示される画像が変わります"
+               style="width: 100%; height: auto;">
+        </picture>
+        <p style="text-align: center; margin-top: 0.5em; color: #666; font-size: 0.9em;">
+          ブラウザの幅を変えると、表示される画像が切り替わります
+        </p>
+      </div>
+
+      <div class="explanation">
+        <strong>学習ポイント：</strong>
+        <code>&lt;picture&gt;</code> 要素の中には必ず <code>&lt;img&gt;</code> 要素が必要です。
+        <code>&lt;img&gt;</code> は picture 要素に対応していないブラウザのフォールバックであり、
+        alt属性やサイズの指定もここに記述します。
+      </div>
+    </section>
+
+    <!-- ========================================
+         セクション3：特大画像（srcset属性のデモ）
+    ======================================== -->
+    <section>
+      <h2>3. srcset属性によるピクセル密度対応</h2>
+
+      <figure class="featured-image">
+        <!--
+          srcset属性で、異なる解像度の画像を指定できます。
+          ブラウザがデバイスのピクセル密度に応じて最適な画像を選びます。
+          1x = 通常のディスプレイ用
+          2x = Retinaディスプレイ（高密度ディスプレイ）用
+        -->
+        <img
+          src="https://via.placeholder.com/800x400/1565c0/ffffff?text=Standard+1x"
+          srcset="https://via.placeholder.com/800x400/1565c0/ffffff?text=Standard+1x 1x,
+                  https://via.placeholder.com/1600x800/0d47a1/ffffff?text=Retina+2x 2x"
+          alt="srcset属性のデモ画像。デバイスの画面密度に応じて最適な解像度の画像が読み込まれます"
+          width="800"
+          height="400"
+          loading="lazy">
+        <figcaption>
+          srcset属性でピクセル密度に応じた画像を出し分けるデモです。
+          Retinaディスプレイでは高解像度版が読み込まれます。
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ========================================
+         セクション4：video要素
+    ======================================== -->
+    <section>
+      <h2>4. 動画の埋め込み（video要素）</h2>
+
+      <div class="media-player">
+        <h3>基本的なvideo要素</h3>
+        <!--
+          video要素の主な属性：
+          - controls: 再生コントロール（再生/一時停止、音量、シークバー等）を表示
+          - poster: 動画再生前に表示されるサムネイル画像
+          - width/height: 動画プレーヤーのサイズ
+          - preload: 読み込み戦略（auto/metadata/none）
+          - muted: ミュート状態で開始
+          - loop: 繰り返し再生
+          - playsinline: モバイルでインライン再生（全画面にならない）
+
+          source要素で複数フォーマットを指定すると、
+          ブラウザが対応する形式を自動選択します。
+        -->
+        <video controls
+               poster="https://via.placeholder.com/640x360/333/ffffff?text=Video+Poster"
+               width="100%"
+               preload="metadata"
+               playsinline>
+          <!--
+            複数のsource要素を指定することで、
+            ブラウザが対応するフォーマットを選択します。
+            上から順に試し、最初に対応しているものが使われます。
+          -->
+          <source src="sample-video.webm" type="video/webm">
+          <source src="sample-video.mp4" type="video/mp4">
+          <!--
+            video要素に対応していないブラウザでは、
+            タグの中のテキストが表示されます。
+          -->
+          <p>
+            お使いのブラウザは動画再生に対応していません。
+            <a href="sample-video.mp4">動画をダウンロード</a>してご覧ください。
+          </p>
+        </video>
+        <p style="font-size: 0.85em; color: #666; margin-top: 0.5em;">
+          ※ このサンプルでは実際の動画ファイルがないため、ポスター画像とコントロールUIが表示されます
+        </p>
+      </div>
+
+      <div class="media-player">
+        <h3>ループ再生＆ミュート動画（背景動画のような使い方）</h3>
+        <video controls muted loop
+               poster="https://via.placeholder.com/640x360/1a237e/ffffff?text=Background+Video"
+               width="100%"
+               preload="none">
+          <source src="background-video.webm" type="video/webm">
+          <source src="background-video.mp4" type="video/mp4">
+          <p>動画を再生できません。</p>
+        </video>
+        <p style="font-size: 0.85em; color: #666; margin-top: 0.5em;">
+          muted + loop + autoplay で背景動画として使えます（autoplayにはmutedが必要です）
+        </p>
+      </div>
+
+      <!-- video要素の属性一覧テーブル -->
+      <table>
+        <caption style="font-weight: bold; text-align: left; margin-bottom: 0.5em;">video要素の主な属性</caption>
+        <thead>
+          <tr>
+            <th>属性</th>
+            <th>説明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>controls</code></td><td>再生コントロールを表示します</td></tr>
+          <tr><td><code>poster</code></td><td>再生前のサムネイル画像を指定します</td></tr>
+          <tr><td><code>autoplay</code></td><td>自動再生します（mutedが必要）</td></tr>
+          <tr><td><code>muted</code></td><td>ミュート状態で開始します</td></tr>
+          <tr><td><code>loop</code></td><td>繰り返し再生します</td></tr>
+          <tr><td><code>preload</code></td><td>読み込み戦略（auto / metadata / none）</td></tr>
+          <tr><td><code>playsinline</code></td><td>モバイルでインライン再生します</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================
+         セクション5：audio要素
+    ======================================== -->
+    <section>
+      <h2>5. 音声の埋め込み（audio要素）</h2>
+
+      <div class="media-player">
+        <h3>ポッドキャスト風オーディオプレーヤー</h3>
+        <figure>
+          <!--
+            audio要素の属性はvideo要素とほぼ同じです。
+            controls属性を付けないと、プレーヤーが表示されません。
+          -->
+          <audio controls preload="metadata" style="width: 100%;">
+            <source src="podcast-episode.ogg" type="audio/ogg">
+            <source src="podcast-episode.mp3" type="audio/mpeg">
+            <p>
+              お使いのブラウザは音声再生に対応していません。
+              <a href="podcast-episode.mp3">音声をダウンロード</a>してお聴きください。
+            </p>
+          </audio>
+          <figcaption>
+            <strong>エピソード #1：HTML5マルチメディアの世界</strong><br>
+            収録日：2024年3月15日 / 再生時間：約15分
+          </figcaption>
+        </figure>
+        <p style="font-size: 0.85em; color: #666; margin-top: 0.5em;">
+          ※ 実際の音声ファイルがないため、コントロールUIのみ表示されます
+        </p>
+      </div>
+
+      <div class="explanation">
+        <strong>学習ポイント：</strong>
+        audio要素とvideo要素には、<code>&lt;source&gt;</code> 要素で複数のファイル形式を
+        指定するのがベストプラクティスです。
+        ブラウザによって対応するコーデックが異なるため、
+        MP3 + OGG（音声）、MP4 + WebM（動画）の組み合わせが推奨されます。
+      </div>
+    </section>
+
+    <!-- ========================================
+         セクション6：alt属性のガイド
+    ======================================== -->
+    <section>
+      <h2>6. alt属性の正しい書き方ガイド</h2>
+      <p>
+        画像のalt属性は、アクセシビリティとSEOの両方に重要です。
+        画像の種類に応じた適切な書き方を確認しましょう。
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>画像の種類</th>
+            <th>alt属性の書き方</th>
+            <th>例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>情報を伝える画像</td>
+            <td>画像の内容を具体的に記述</td>
+            <td><code>alt="富士山の山頂から見た日の出"</code></td>
+          </tr>
+          <tr>
+            <td>テキストを含む画像</td>
+            <td>画像内のテキストをそのまま記述</td>
+            <td><code>alt="SALE 50%OFF"</code></td>
+          </tr>
+          <tr>
+            <td>装飾的な画像</td>
+            <td>空のalt（alt=""）を指定</td>
+            <td><code>alt=""</code></td>
+          </tr>
+          <tr>
+            <td>グラフや図表</td>
+            <td>データの要約を記述</td>
+            <td><code>alt="2024年の売上推移グラフ。1月100万円から12月200万円へ増加"</code></td>
+          </tr>
+          <tr>
+            <td>リンク内の画像</td>
+            <td>リンク先の情報を記述</td>
+            <td><code>alt="ホームページへ戻る"</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <hr>
+  <footer style="text-align: center; padding: 1em; color: #666;">
+    <p><small>&copy; 2024 HTML学習サンプル - メディアギャラリー</small></p>
+  </footer>
+
+</body>
+</html>

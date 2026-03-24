@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル08：インタラクティブページ
+    ============================================================
+    【学べる内容】
+    - data-* 属性（カスタムデータ属性）の活用
+      - dataset プロパティによるJavaScriptからのアクセス
+      - CSS属性セレクタ [data-*] によるスタイル適用
+    - Geolocation API で現在位置を取得する
+    - localStorage API でブラウザにデータを保存する
+    - Canvas要素の基本的な描画（図形、テキスト、色）
+    - data属性を使ったフィルタリングUI
+    - data属性を使ったツールチップ表示
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+    - Geolocation API は位置情報の許可が必要です
+    - localStorage はローカルファイルでも動作します
+    - Canvas はJavaScriptで描画を行います
+
+    【対応する教材】
+    第8章：HTML5の便利な要素とAPI
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>インタラクティブページ | HTML学習サンプル</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2em 1em;
+      line-height: 1.7;
+      color: #333;
+    }
+    h1 {
+      color: #ad1457;
+      border-bottom: 3px solid #ad1457;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+    h2 {
+      color: #ad1457;
+      margin: 2em 0 0.8em;
+    }
+    h3 {
+      color: #c2185b;
+      margin: 1em 0 0.5em;
+    }
+
+    /* カード */
+    .demo-section {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.5em;
+      margin-bottom: 1.5em;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    /* ボタン */
+    button {
+      padding: 0.5em 1.2em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+      background: #fff;
+    }
+    button:hover { background: #f5f5f5; }
+    .btn-primary {
+      background: #ad1457;
+      color: #fff;
+      border-color: #ad1457;
+    }
+    .btn-primary:hover { background: #880e4f; }
+
+    /* data属性で切り替わるステータスカラー */
+    [data-status="active"] { color: #2e7d32; }
+    [data-status="inactive"] { color: #9e9e9e; }
+    [data-status="pending"] { color: #f57f17; }
+
+    /* data属性ツールチップ */
+    [data-tooltip] {
+      position: relative;
+      cursor: help;
+      border-bottom: 1px dotted #999;
+    }
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 0.4em 0.8em;
+      border-radius: 4px;
+      font-size: 0.8em;
+      white-space: nowrap;
+      z-index: 10;
+      margin-bottom: 0.3em;
+    }
+    [data-tooltip]:hover::before {
+      content: "";
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 10;
+    }
+
+    /* フィルターボタン */
+    .filter-buttons {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 1em;
+      flex-wrap: wrap;
+    }
+    .filter-btn.active {
+      background: #ad1457;
+      color: #fff;
+      border-color: #ad1457;
+    }
+
+    /* 商品カード */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1em;
+    }
+    .product-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1em;
+      text-align: center;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .product-card.hidden {
+      display: none;
+    }
+    .product-card .price {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #ad1457;
+    }
+    .product-card .category-tag {
+      display: inline-block;
+      background: #fce4ec;
+      color: #ad1457;
+      padding: 0.1em 0.5em;
+      border-radius: 10px;
+      font-size: 0.8em;
+      margin-top: 0.3em;
+    }
+
+    /* メモアプリ */
+    .memo-area {
+      width: 100%;
+      min-height: 120px;
+      padding: 0.8em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1em;
+      resize: vertical;
+    }
+    .memo-list {
+      margin-top: 1em;
+    }
+    .memo-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      padding: 0.8em;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      margin-bottom: 0.5em;
+      background: #fafafa;
+    }
+    .memo-item .memo-text {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .memo-item .memo-date {
+      font-size: 0.8em;
+      color: #999;
+      margin-left: 1em;
+      white-space: nowrap;
+    }
+    .memo-item button {
+      margin-left: 0.5em;
+      padding: 0.2em 0.5em;
+      font-size: 0.8em;
+    }
+    .save-indicator {
+      font-size: 0.85em;
+      color: #2e7d32;
+      margin-left: 0.5em;
+    }
+
+    /* 位置情報 */
+    .location-info {
+      background: #f5f5f5;
+      padding: 1em;
+      border-radius: 4px;
+      margin-top: 0.5em;
+    }
+
+    /* Canvas */
+    canvas {
+      border: 2px solid #e0e0e0;
+      border-radius: 4px;
+      display: block;
+      margin: 0.5em 0;
+      max-width: 100%;
+    }
+    .canvas-controls {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      margin: 0.5em 0;
+    }
+
+    /* コード例 */
+    .code-hint {
+      background: #fce4ec;
+      border-left: 4px solid #ad1457;
+      padding: 0.8em 1em;
+      margin: 0.8em 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.9em;
+    }
+    code {
+      background: #f5f5f5;
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>インタラクティブページ</h1>
+  <p>
+    HTML5のdata属性とAPIを活用した、インタラクティブな機能のデモです。
+    各セクションのボタンを操作して動作を確認してください。
+  </p>
+
+  <!-- ========================================
+       セクション1：data-* 属性のデモ
+  ======================================== -->
+  <section class="demo-section">
+    <h2>1. data-* 属性（カスタムデータ属性）</h2>
+
+    <h3>1-1. data属性とCSS属性セレクタの組み合わせ</h3>
+    <p>
+      data属性の値に応じてCSSでスタイルを切り替えます。
+      ボタンを押すとステータスが変わります。
+    </p>
+
+    <!--
+      data-status 属性の値に応じて、
+      CSSの属性セレクタ [data-status="active"] で色が変わります。
+    -->
+    <p>
+      現在のステータス：
+      <strong id="status-text" data-status="active">アクティブ</strong>
+    </p>
+    <div style="display: flex; gap: 0.5em; margin-top: 0.5em;">
+      <button onclick="changeStatus('active', 'アクティブ')">Active</button>
+      <button onclick="changeStatus('inactive', '非アクティブ')">Inactive</button>
+      <button onclick="changeStatus('pending', '保留中')">Pending</button>
+    </div>
+
+    <div class="code-hint">
+      <strong>ポイント：</strong>
+      CSSで <code>[data-status="active"] { color: green; }</code> のように、
+      data属性の値に応じたスタイルを適用できます。
+    </div>
+
+    <h3>1-2. data属性によるツールチップ</h3>
+    <p>
+      以下の用語にマウスを乗せると、
+      <span data-tooltip="HyperText Markup Languageの略です">HTML</span>、
+      <span data-tooltip="Cascading Style Sheetsの略です">CSS</span>、
+      <span data-tooltip="Webページに動きをつけるプログラミング言語です">JavaScript</span>
+      のツールチップが表示されます。
+    </p>
+
+    <div class="code-hint">
+      <strong>ポイント：</strong>
+      <code>::after</code> 疑似要素と <code>content: attr(data-tooltip)</code> で、
+      data属性の値をツールチップとして表示しています。JavaScriptは不要です。
+    </div>
+
+    <h3>1-3. data属性を使った商品フィルタリング</h3>
+    <p>カテゴリボタンを押すと、対応する商品だけが表示されます。</p>
+
+    <div class="filter-buttons">
+      <button class="filter-btn active" onclick="filterProducts('all')">すべて</button>
+      <button class="filter-btn" onclick="filterProducts('book')">書籍</button>
+      <button class="filter-btn" onclick="filterProducts('gadget')">ガジェット</button>
+      <button class="filter-btn" onclick="filterProducts('food')">食品</button>
+    </div>
+
+    <div class="product-grid">
+      <!--
+        data-category 属性に商品のカテゴリを埋め込んでいます。
+        data-price 属性に価格データを埋め込んでいます。
+        JavaScriptから dataset.category でアクセスできます。
+      -->
+      <div class="product-card" data-category="book" data-price="2980">
+        <p style="font-size: 2em;">📚</p>
+        <p><strong>HTML入門書</strong></p>
+        <p class="price">&yen;2,980</p>
+        <span class="category-tag">書籍</span>
+      </div>
+      <div class="product-card" data-category="gadget" data-price="12800">
+        <p style="font-size: 2em;">🖱️</p>
+        <p><strong>ワイヤレスマウス</strong></p>
+        <p class="price">&yen;12,800</p>
+        <span class="category-tag">ガジェット</span>
+      </div>
+      <div class="product-card" data-category="book" data-price="3500">
+        <p style="font-size: 2em;">📖</p>
+        <p><strong>CSS設計ガイド</strong></p>
+        <p class="price">&yen;3,500</p>
+        <span class="category-tag">書籍</span>
+      </div>
+      <div class="product-card" data-category="food" data-price="1500">
+        <p style="font-size: 2em;">☕</p>
+        <p><strong>コーヒー豆セット</strong></p>
+        <p class="price">&yen;1,500</p>
+        <span class="category-tag">食品</span>
+      </div>
+      <div class="product-card" data-category="gadget" data-price="8900">
+        <p style="font-size: 2em;">⌨️</p>
+        <p><strong>メカニカルキーボード</strong></p>
+        <p class="price">&yen;8,900</p>
+        <span class="category-tag">ガジェット</span>
+      </div>
+      <div class="product-card" data-category="food" data-price="980">
+        <p style="font-size: 2em;">🍵</p>
+        <p><strong>抹茶セット</strong></p>
+        <p class="price">&yen;980</p>
+        <span class="category-tag">食品</span>
+      </div>
+    </div>
+
+    <p id="filter-info" style="margin-top: 0.5em; color: #666; font-size: 0.9em;">
+      全6商品を表示中
+    </p>
+
+    <div class="code-hint">
+      <strong>ポイント：</strong>
+      <code>element.dataset.category</code> で data-category 属性の値を取得し、
+      フィルタリング処理を行っています。
+    </div>
+  </section>
+
+  <!-- ========================================
+       セクション2：Geolocation API
+  ======================================== -->
+  <section class="demo-section">
+    <h2>2. Geolocation API（位置情報の取得）</h2>
+    <p>
+      <code>navigator.geolocation</code> を使って、
+      ブラウザから現在の位置情報（緯度・経度）を取得できます。
+      ユーザーの許可が必要です。
+    </p>
+
+    <button class="btn-primary" onclick="getLocation()">現在位置を取得</button>
+
+    <div id="location-result" class="location-info" style="display: none;">
+      <p>取得中...</p>
+    </div>
+
+    <div class="code-hint">
+      <strong>注意：</strong>
+      Geolocation API はユーザーの許可が必要です。
+      HTTPSまたはlocalhost以外では動作しない場合があります。
+      また、位置情報はプライバシーに関わるため、取り扱いには十分注意が必要です。
+    </div>
+  </section>
+
+  <!-- ========================================
+       セクション3：localStorage
+  ======================================== -->
+  <section class="demo-section">
+    <h2>3. localStorage（ブラウザへのデータ保存）</h2>
+    <p>
+      <code>localStorage</code> を使うと、ブラウザにキーと値のペアで
+      データを永続的に保存できます。ページを閉じても、再度開くとデータが残っています。
+    </p>
+
+    <h3>メモ帳アプリ</h3>
+    <div style="display: flex; gap: 0.5em; align-items: start;">
+      <textarea id="memo-input" class="memo-area" placeholder="メモを入力してください..."></textarea>
+    </div>
+    <div style="margin-top: 0.5em; display: flex; gap: 0.5em; align-items: center;">
+      <button class="btn-primary" onclick="saveMemo()">保存</button>
+      <button onclick="clearAllMemos()">全削除</button>
+      <span id="save-indicator" class="save-indicator"></span>
+    </div>
+
+    <div id="memo-list" class="memo-list"></div>
+
+    <p style="margin-top: 0.8em; font-size: 0.85em; color: #666;">
+      保存されたメモ数：<strong id="memo-count">0</strong>件
+    </p>
+
+    <div class="code-hint">
+      <strong>ポイント：</strong>
+      <code>localStorage.setItem(key, value)</code> でデータを保存し、
+      <code>localStorage.getItem(key)</code> で読み込みます。
+      値は文字列のみなので、オブジェクトは <code>JSON.stringify()</code> で変換します。
+    </div>
+  </section>
+
+  <!-- ========================================
+       セクション4：Canvas
+  ======================================== -->
+  <section class="demo-section">
+    <h2>4. Canvas（グラフィック描画）</h2>
+    <p>
+      <code>&lt;canvas&gt;</code> 要素とJavaScriptを使って、
+      図形やテキストを描画できます。ゲーム、グラフ、画像処理など幅広く活用されます。
+    </p>
+
+    <h3>4-1. 基本図形の描画</h3>
+    <div class="canvas-controls">
+      <button onclick="drawShapes()">図形を描画</button>
+      <button onclick="clearCanvas('shapes-canvas')">クリア</button>
+    </div>
+    <!--
+      canvas要素：
+      width/height属性で描画領域のサイズを指定します。
+      CSSのwidth/heightとは異なるので注意してください。
+      canvas非対応ブラウザではタグ内のテキストが表示されます。
+    -->
+    <canvas id="shapes-canvas" width="600" height="300">
+      お使いのブラウザはcanvas要素に対応していません。
+    </canvas>
+
+    <h3>4-2. お絵描きキャンバス</h3>
+    <div class="canvas-controls">
+      <label>色：
+        <input type="color" id="draw-color" value="#ad1457">
+      </label>
+      <label>太さ：
+        <input type="range" id="draw-width" min="1" max="20" value="3">
+        <span id="draw-width-value">3</span>px
+      </label>
+      <button onclick="clearCanvas('draw-canvas')">クリア</button>
+    </div>
+    <canvas id="draw-canvas" width="600" height="300" style="cursor: crosshair; touch-action: none;">
+      お使いのブラウザはcanvas要素に対応していません。
+    </canvas>
+    <p style="font-size: 0.85em; color: #666;">
+      マウスでドラッグして描画できます
+    </p>
+
+    <h3>4-3. 時計の描画（アニメーション）</h3>
+    <div class="canvas-controls">
+      <button onclick="startClock()">時計を開始</button>
+      <button onclick="stopClock()">停止</button>
+    </div>
+    <canvas id="clock-canvas" width="250" height="250">
+      お使いのブラウザはcanvas要素に対応していません。
+    </canvas>
+  </section>
+
+  <hr style="margin: 2em 0;">
+  <footer style="text-align: center; color: #666;">
+    <p><small>&copy; 2024 HTML学習サンプル - インタラクティブページ</small></p>
+  </footer>
+
+  <script>
+    // ========================================
+    // 1. data-* 属性のデモ
+    // ========================================
+
+    // ステータス変更
+    function changeStatus(status, label) {
+      const el = document.getElementById('status-text');
+      // dataset プロパティでdata属性を読み書きできます
+      el.dataset.status = status;
+      el.textContent = label;
+    }
+
+    // 商品フィルタリング（data-category を使用）
+    function filterProducts(category) {
+      const cards = document.querySelectorAll('.product-card');
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        // card.dataset.category で data-category の値を取得
+        if (category === 'all' || card.dataset.category === category) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      // フィルターボタンのアクティブ状態を更新
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // 表示件数を更新
+      document.getElementById('filter-info').textContent =
+        visibleCount + '商品を表示中';
+    }
+
+    // ========================================
+    // 2. Geolocation API
+    // ========================================
+    function getLocation() {
+      const resultDiv = document.getElementById('location-result');
+      resultDiv.style.display = 'block';
+
+      // ブラウザがGeolocationに対応しているかチェック
+      if (!navigator.geolocation) {
+        resultDiv.innerHTML = '<p style="color: #c62828;">お使いのブラウザは Geolocation API に対応していません。</p>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<p>位置情報を取得中... ブラウザの許可ダイアログで「許可」を押してください。</p>';
+
+      // 現在位置を取得（ユーザーの許可が必要）
+      navigator.geolocation.getCurrentPosition(
+        // 成功コールバック
+        function(position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+          const timestamp = new Date(position.timestamp);
+
+          resultDiv.innerHTML =
+            '<h3>位置情報の取得に成功しました</h3>' +
+            '<p><strong>緯度：</strong>' + lat.toFixed(6) + '</p>' +
+            '<p><strong>経度：</strong>' + lon.toFixed(6) + '</p>' +
+            '<p><strong>精度：</strong>約 ' + Math.round(accuracy) + 'm</p>' +
+            '<p><strong>取得時刻：</strong>' + timestamp.toLocaleString('ja-JP') + '</p>' +
+            '<p style="margin-top: 0.5em;">' +
+            '<a href="https://www.google.com/maps?q=' + lat + ',' + lon + '" ' +
+            'target="_blank" rel="noopener noreferrer">Google Maps で確認する</a></p>';
+        },
+        // エラーコールバック
+        function(error) {
+          let message = '';
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              message = '位置情報の取得が拒否されました。ブラウザの設定で許可してください。';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              message = '位置情報を取得できませんでした。';
+              break;
+            case error.TIMEOUT:
+              message = '位置情報の取得がタイムアウトしました。';
+              break;
+            default:
+              message = '不明なエラーが発生しました。';
+          }
+          resultDiv.innerHTML = '<p style="color: #c62828;">' + message + '</p>';
+        },
+        // オプション
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    // ========================================
+    // 3. localStorage メモ帳
+    // ========================================
+    const STORAGE_KEY = 'html-sample-memos';
+
+    // 保存されているメモを読み込む
+    function loadMemos() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    // メモを保存する
+    function saveMemo() {
+      const input = document.getElementById('memo-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const memos = loadMemos();
+      memos.unshift({
+        id: Date.now(),
+        text: text,
+        date: new Date().toLocaleString('ja-JP')
+      });
+
+      // localStorage にJSON文字列として保存
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memos));
+      input.value = '';
+
+      // 保存インジケーターを表示
+      const indicator = document.getElementById('save-indicator');
+      indicator.textContent = '保存しました！';
+      setTimeout(() => { indicator.textContent = ''; }, 2000);
+
+      renderMemos();
+    }
+
+    // メモを削除する
+    function deleteMemo(id) {
+      let memos = loadMemos();
+      memos = memos.filter(m => m.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(memos));
+      renderMemos();
+    }
+
+    // 全メモを削除する
+    function clearAllMemos() {
+      if (loadMemos().length === 0) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderMemos();
+    }
+
+    // メモの一覧を描画する
+    function renderMemos() {
+      const memos = loadMemos();
+      const listDiv = document.getElementById('memo-list');
+      const countSpan = document.getElementById('memo-count');
+      countSpan.textContent = memos.length;
+
+      if (memos.length === 0) {
+        listDiv.innerHTML = '<p style="color: #999; font-style: italic;">保存されたメモはありません</p>';
+        return;
+      }
+
+      listDiv.innerHTML = memos.map(memo =>
+        '<div class="memo-item">' +
+        '  <span class="memo-text">' + escapeHtml(memo.text) + '</span>' +
+        '  <span class="memo-date">' + memo.date + '</span>' +
+        '  <button onclick="deleteMemo(' + memo.id + ')">削除</button>' +
+        '</div>'
+      ).join('');
+    }
+
+    // HTMLエスケープ
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ページ読み込み時にメモを表示
+    renderMemos();
+
+    // ========================================
+    // 4. Canvas 基本図形の描画
+    // ========================================
+    function drawShapes() {
+      const canvas = document.getElementById('shapes-canvas');
+      // canvas要素の描画コンテキストを取得（2Dの場合）
+      const ctx = canvas.getContext('2d');
+
+      // キャンバスをクリア
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 背景
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 四角形（塗りつぶし）
+      ctx.fillStyle = '#ad1457';
+      ctx.fillRect(30, 30, 100, 80);
+
+      // 四角形（枠線のみ）
+      ctx.strokeStyle = '#1565c0';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(160, 30, 100, 80);
+
+      // 円（塗りつぶし）
+      ctx.beginPath();
+      ctx.arc(350, 70, 50, 0, Math.PI * 2);
+      ctx.fillStyle = '#2e7d32';
+      ctx.fill();
+
+      // 円（枠線のみ）
+      ctx.beginPath();
+      ctx.arc(480, 70, 50, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ff8f00';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 三角形
+      ctx.beginPath();
+      ctx.moveTo(80, 250);
+      ctx.lineTo(130, 160);
+      ctx.lineTo(180, 250);
+      ctx.closePath();
+      ctx.fillStyle = '#7b1fa2';
+      ctx.fill();
+
+      // 線
+      ctx.beginPath();
+      ctx.moveTo(220, 160);
+      ctx.lineTo(350, 250);
+      ctx.strokeStyle = '#c62828';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // テキスト
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#333';
+      ctx.fillText('Canvas で図形を描画！', 370, 200);
+
+      // 小さなラベル
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#666';
+      ctx.fillText('fillRect', 50, 130);
+      ctx.fillText('strokeRect', 175, 130);
+      ctx.fillText('arc (fill)', 320, 140);
+      ctx.fillText('arc (stroke)', 445, 140);
+      ctx.fillText('三角形', 95, 270);
+      ctx.fillText('線 (line)', 260, 270);
+    }
+
+    function clearCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // ========================================
+    // 4-2. お絵描きキャンバス
+    // ========================================
+    (function() {
+      const canvas = document.getElementById('draw-canvas');
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+      let lastX = 0;
+      let lastY = 0;
+
+      // 線の太さの表示更新
+      document.getElementById('draw-width').addEventListener('input', function() {
+        document.getElementById('draw-width-value').textContent = this.value;
+      });
+
+      function getPosition(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        if (e.touches) {
+          return {
+            x: (e.touches[0].clientX - rect.left) * scaleX,
+            y: (e.touches[0].clientY - rect.top) * scaleY
+          };
+        }
+        return {
+          x: (e.clientX - rect.left) * scaleX,
+          y: (e.clientY - rect.top) * scaleY
+        };
+      }
+
+      function startDraw(e) {
+        isDrawing = true;
+        const pos = getPosition(e);
+        lastX = pos.x;
+        lastY = pos.y;
+      }
+
+      function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPosition(e);
+
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = document.getElementById('draw-color').value;
+        ctx.lineWidth = document.getElementById('draw-width').value;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        lastX = pos.x;
+        lastY = pos.y;
+      }
+
+      function stopDraw() {
+        isDrawing = false;
+      }
+
+      // マウスイベント
+      canvas.addEventListener('mousedown', startDraw);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDraw);
+      canvas.addEventListener('mouseout', stopDraw);
+
+      // タッチイベント（スマートフォン対応）
+      canvas.addEventListener('touchstart', startDraw);
+      canvas.addEventListener('touchmove', draw);
+      canvas.addEventListener('touchend', stopDraw);
+    })();
+
+    // ========================================
+    // 4-3. アナログ時計
+    // ========================================
+    let clockInterval = null;
+
+    function startClock() {
+      if (clockInterval) return;
+      drawClock();
+      clockInterval = setInterval(drawClock, 1000);
+    }
+
+    function stopClock() {
+      if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+      }
+    }
+
+    function drawClock() {
+      const canvas = document.getElementById('clock-canvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const centerX = w / 2;
+      const centerY = h / 2;
+      const radius = Math.min(w, h) / 2 - 10;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 文字盤の背景
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 数字と目盛り
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 1; i <= 12; i++) {
+        const angle = (i * Math.PI / 6) - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * (radius - 25);
+        const y = centerY + Math.sin(angle) * (radius - 25);
+        ctx.fillText(i.toString(), x, y);
+      }
+
+      // 目盛り
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * Math.PI / 30) - Math.PI / 2;
+        const outerR = radius - 5;
+        const innerR = i % 5 === 0 ? radius - 15 : radius - 10;
+        ctx.beginPath();
+        ctx.moveTo(
+          centerX + Math.cos(angle) * innerR,
+          centerY + Math.sin(angle) * innerR
+        );
+        ctx.lineTo(
+          centerX + Math.cos(angle) * outerR,
+          centerY + Math.sin(angle) * outerR
+        );
+        ctx.strokeStyle = i % 5 === 0 ? '#333' : '#999';
+        ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+        ctx.stroke();
+      }
+
+      // 現在時刻
+      const now = new Date();
+      const hours = now.getHours() % 12;
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      // 時針
+      const hourAngle = ((hours + minutes / 60) * Math.PI / 6) - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(
+        centerX + Math.cos(hourAngle) * (radius * 0.5),
+        centerY + Math.sin(hourAngle) * (radius * 0.5)
+      );
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 分針
+      const minuteAngle = ((minutes + seconds / 60) * Math.PI / 30) - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(
+        centerX + Math.cos(minuteAngle) * (radius * 0.7),
+        centerY + Math.sin(minuteAngle) * (radius * 0.7)
+      );
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 秒針
+      const secondAngle = (seconds * Math.PI / 30) - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(
+        centerX + Math.cos(secondAngle) * (radius * 0.8),
+        centerY + Math.sin(secondAngle) * (radius * 0.8)
+      );
+      ctx.strokeStyle = '#ad1457';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 中心の点
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ad1457';
+      ctx.fill();
+    }
+  </script>
+
+</body>
+</html>

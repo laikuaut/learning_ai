@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル03：お問い合わせフォーム
+    ============================================================
+    【学べる内容】
+    - form要素の基本（action, method属性）
+    - 各種input type（text, email, tel, number, date, password, url）
+    - select要素とoptgroup要素によるドロップダウンリスト
+    - textarea要素による複数行テキスト入力
+    - checkbox, radio ボタンの使い方
+    - fieldset / legend によるフォームのグループ化
+    - label要素の正しい紐付け（for属性とid属性）
+    - HTMLバリデーション属性（required, pattern, min, max, minlength, maxlength）
+    - datalist要素による入力候補の表示
+    - button要素のtype属性の使い分け（submit, reset, button）
+    - autocomplete属性の設定
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+    ※ 送信ボタンを押すとバリデーションが動作しますが、
+      実際にデータは送信されません（送信先は架空のURLです）。
+
+    【対応する教材】
+    第5章：フォーム
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お問い合わせフォーム | HTML学習サンプル</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 650px;
+      margin: 2em auto;
+      padding: 0 1em;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #1565c0;
+      border-bottom: 3px solid #1565c0;
+      padding-bottom: 0.3em;
+    }
+    h2 {
+      color: #1565c0;
+    }
+    fieldset {
+      margin-bottom: 1.5em;
+      padding: 1.2em;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    legend {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #1565c0;
+      padding: 0 0.5em;
+    }
+    label {
+      display: block;
+      margin-top: 1em;
+      font-weight: bold;
+    }
+    label.inline {
+      display: inline;
+      font-weight: normal;
+      margin-top: 0;
+    }
+    .hint {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 0.2em;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.6em;
+      margin-top: 0.3em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 1em;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: 2px solid #1565c0;
+      border-color: #1565c0;
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: auto;
+      margin-right: 0.3em;
+    }
+    .radio-group, .checkbox-group {
+      margin-top: 0.5em;
+    }
+    .radio-group label, .checkbox-group label {
+      display: block;
+      font-weight: normal;
+      margin-top: 0.3em;
+    }
+    .required::after {
+      content: " *";
+      color: #e53935;
+    }
+    .button-group {
+      display: flex;
+      gap: 1em;
+      margin-top: 1.5em;
+    }
+    button {
+      padding: 0.8em 2em;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button[type="submit"] {
+      background: #1565c0;
+      color: #fff;
+      border-color: #1565c0;
+    }
+    button[type="submit"]:hover {
+      background: #0d47a1;
+    }
+    button[type="reset"] {
+      background: #f5f5f5;
+    }
+    button[type="reset"]:hover {
+      background: #e0e0e0;
+    }
+    .output-section {
+      margin-top: 2em;
+      padding: 1em;
+      background: #e3f2fd;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>お問い合わせフォーム</h1>
+  <p>
+    以下のフォームに必要事項をご記入のうえ、送信ボタンを押してください。
+    <span style="color: #e53935;">*</span> の付いた項目は入力必須です。
+  </p>
+
+  <!--
+    form要素のaction属性は送信先のURLを指定します。
+    method="post"はデータをHTTPリクエストのボディとして送信します。
+    ※ このサンプルでは実際の送信先はないため、ページ内で結果を表示します。
+  -->
+  <form id="contact-form" action="#" method="post" novalidate
+        onsubmit="return handleSubmit(event)">
+
+    <!-- ========================================
+         個人情報セクション
+         fieldsetでグループ化、legendでタイトルを付けます
+    ======================================== -->
+    <fieldset>
+      <legend>お客様情報</legend>
+
+      <!-- label の for属性と input の id属性を一致させて紐付けます -->
+      <label for="name" class="required">お名前</label>
+      <input type="text" id="name" name="name"
+             required minlength="2" maxlength="50"
+             placeholder="例：田中 太郎"
+             autocomplete="name">
+      <p class="hint">姓と名の間にスペースを入れてください</p>
+
+      <label for="email" class="required">メールアドレス</label>
+      <input type="email" id="email" name="email"
+             required
+             placeholder="例：tanaka@example.com"
+             autocomplete="email">
+      <p class="hint">確認メールを送信します</p>
+
+      <label for="tel">電話番号</label>
+      <input type="tel" id="tel" name="tel"
+             pattern="0\d{1,4}-\d{1,4}-\d{4}"
+             placeholder="例：03-1234-5678"
+             title="ハイフン付きの電話番号を入力してください（例：03-1234-5678）"
+             autocomplete="tel">
+      <p class="hint">ハイフン付きで入力してください</p>
+
+      <label for="zip">郵便番号</label>
+      <input type="text" id="zip" name="zip"
+             pattern="\d{3}-\d{4}"
+             placeholder="例：100-0001"
+             title="000-0000の形式で入力してください"
+             autocomplete="postal-code">
+
+      <label for="address">住所</label>
+      <input type="text" id="address" name="address"
+             placeholder="例：東京都千代田区..."
+             autocomplete="street-address">
+
+      <label for="birthdate">生年月日</label>
+      <input type="date" id="birthdate" name="birthdate"
+             min="1920-01-01" max="2010-12-31"
+             autocomplete="bday">
+
+      <label for="website">WebサイトURL</label>
+      <input type="url" id="website" name="website"
+             placeholder="例：https://example.com">
+    </fieldset>
+
+    <!-- ========================================
+         お問い合わせ内容セクション
+    ======================================== -->
+    <fieldset>
+      <legend>お問い合わせ内容</legend>
+
+      <!-- select要素でドロップダウンリストを作成 -->
+      <label for="category" class="required">カテゴリ</label>
+      <select id="category" name="category" required>
+        <option value="">-- 選択してください --</option>
+        <!-- optgroupでグループ分け -->
+        <optgroup label="製品について">
+          <option value="product-info">製品の機能について</option>
+          <option value="product-price">料金プランについて</option>
+          <option value="product-compare">他製品との比較</option>
+        </optgroup>
+        <optgroup label="サポート">
+          <option value="support-bug">不具合の報告</option>
+          <option value="support-how">使い方のご質問</option>
+          <option value="support-account">アカウントについて</option>
+        </optgroup>
+        <optgroup label="その他">
+          <option value="partnership">提携のご相談</option>
+          <option value="media">取材のご依頼</option>
+          <option value="other">その他</option>
+        </optgroup>
+      </select>
+
+      <!-- datalist要素で入力候補を表示（selectとテキスト入力のハイブリッド） -->
+      <label for="found-from">どこで弊社を知りましたか？</label>
+      <input type="text" id="found-from" name="found-from"
+             list="referral-sources"
+             placeholder="選択または自由入力">
+      <datalist id="referral-sources">
+        <option value="Google検索">
+        <option value="SNS（Twitter/X）">
+        <option value="SNS（Instagram）">
+        <option value="友人・知人の紹介">
+        <option value="展示会・イベント">
+        <option value="Web広告">
+        <option value="テレビ・雑誌">
+      </datalist>
+
+      <!-- radioボタン（1つだけ選択可能） -->
+      <label class="required">緊急度</label>
+      <div class="radio-group">
+        <label class="inline">
+          <input type="radio" name="urgency" value="high" required>
+          高（すぐに回答が必要）
+        </label>
+        <label class="inline">
+          <input type="radio" name="urgency" value="medium" required>
+          中（1週間以内に回答希望）
+        </label>
+        <label class="inline">
+          <input type="radio" name="urgency" value="low" required>
+          低（急ぎではない）
+        </label>
+      </div>
+
+      <!-- number入力 -->
+      <label for="budget">ご予算（万円）</label>
+      <input type="number" id="budget" name="budget"
+             min="0" max="10000" step="10"
+             placeholder="例：100">
+      <p class="hint">概算で構いません（0〜10,000万円）</p>
+
+      <!-- textarea要素で複数行テキスト入力 -->
+      <label for="message" class="required">お問い合わせ内容</label>
+      <textarea id="message" name="message"
+                rows="6" required
+                minlength="10" maxlength="2000"
+                placeholder="お問い合わせ内容を詳しくご記入ください（10文字以上）"></textarea>
+      <p class="hint">10文字以上2,000文字以内でご記入ください</p>
+    </fieldset>
+
+    <!-- ========================================
+         確認セクション
+    ======================================== -->
+    <fieldset>
+      <legend>確認事項</legend>
+
+      <!-- checkboxボタン（複数選択可能） -->
+      <label>ご希望の連絡方法（複数選択可）</label>
+      <div class="checkbox-group">
+        <label class="inline">
+          <input type="checkbox" name="contact-method" value="email" checked>
+          メール
+        </label>
+        <label class="inline">
+          <input type="checkbox" name="contact-method" value="phone">
+          電話
+        </label>
+        <label class="inline">
+          <input type="checkbox" name="contact-method" value="online">
+          オンライン会議
+        </label>
+      </div>
+
+      <div style="margin-top: 1.5em;">
+        <!--
+          required属性をcheckboxに付けると、
+          チェックしないと送信できなくなります
+        -->
+        <label class="inline">
+          <input type="checkbox" name="agree" required>
+          <a href="#" onclick="alert('プライバシーポリシーの内容です（サンプル）'); return false;">
+            プライバシーポリシー
+          </a>に同意します <span style="color: #e53935;">*</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- ========================================
+         ボタンセクション
+         button要素のtype属性で動作が変わります
+    ======================================== -->
+    <div class="button-group">
+      <!-- type="submit": フォームを送信する -->
+      <button type="submit">送信する</button>
+      <!-- type="reset": フォームを初期値に戻す -->
+      <button type="reset">リセット</button>
+      <!-- type="button": 何もしない（JavaScriptで制御） -->
+      <button type="button" onclick="alert('下書きを保存しました（サンプル）')">下書き保存</button>
+    </div>
+  </form>
+
+  <!-- 送信結果の表示エリア -->
+  <div id="result" class="output-section" style="display: none;">
+    <h2>送信内容の確認</h2>
+    <p>以下の内容で送信されます（このサンプルでは実際には送信されません）。</p>
+    <pre id="result-content" style="background: #fff; padding: 1em; border-radius: 4px; overflow-x: auto;"></pre>
+  </div>
+
+  <!-- output要素：計算結果の表示デモ -->
+  <div style="margin-top: 2em;">
+    <h2>おまけ：output要素のデモ</h2>
+    <p>output要素は計算結果をリアルタイムに表示するために使います。</p>
+    <form oninput="total.value = parseInt(price.value || 0) * parseInt(qty.value || 0)">
+      <label for="price">単価（円）：</label>
+      <input type="number" id="price" name="price" value="1000" style="width: 120px;">
+      <label for="qty" style="display: inline; margin-left: 1em;">数量：</label>
+      <input type="number" id="qty" name="qty" value="1" min="1" max="100" style="width: 80px;">
+      <p>合計金額：<strong><output name="total" for="price qty">1000</output> 円</strong></p>
+    </form>
+  </div>
+
+  <script>
+    // フォーム送信時の処理（サンプル用：実際にはサーバーに送信します）
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      // HTML標準のバリデーションを実行
+      const form = document.getElementById('contact-form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+      }
+
+      // フォームデータを取得して表示
+      const formData = new FormData(form);
+      const entries = [];
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          entries.push(key + ': ' + value);
+        }
+      }
+
+      const resultDiv = document.getElementById('result');
+      const resultContent = document.getElementById('result-content');
+      resultContent.textContent = entries.join('\n');
+      resultDiv.style.display = 'block';
+      resultDiv.scrollIntoView({ behavior: 'smooth' });
+
+      return false;
+    }
+  </script>
+
+  <hr>
+  <p><small>&copy; 2024 HTML学習サンプル - お問い合わせフォーム</small></p>
+
+</body>
+</html>

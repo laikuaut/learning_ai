@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル04：ブログレイアウト
+    ============================================================
+    【学べる内容】
+    - セマンティックHTML要素の実践的な使い方
+    - header要素：ページヘッダー、記事ヘッダー
+    - nav要素：メインナビゲーション、パンくずリスト
+    - main要素：ページの主要コンテンツ（1つだけ配置）
+    - article要素：自己完結型のコンテンツ（ブログ記事）
+    - section要素：テーマ別のセクション分け
+    - aside要素：サイドバー、補足情報
+    - footer要素：ページフッター、記事フッター
+    - time要素：日時の構造化
+    - address要素：連絡先情報
+    - blockquote要素：引用
+    - WAI-ARIA属性（aria-label, aria-current）
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+
+    【対応する教材】
+    第6章：セマンティックHTML
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechBlog - CSSグリッドで作るモダンレイアウト | HTML学習サンプル</title>
+  <style>
+    /* リセットと基本スタイル */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      line-height: 1.8;
+      color: #333;
+      background: #f5f5f5;
+    }
+    a { color: #1565c0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* スキップリンク（アクセシビリティ対応） */
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+    }
+    .skip-link:focus {
+      position: static;
+      display: block;
+      padding: 0.5em 1em;
+      background: #1565c0;
+      color: #fff;
+      text-align: center;
+      z-index: 100;
+    }
+
+    /* ページヘッダー */
+    .site-header {
+      background: #1565c0;
+      color: #fff;
+      padding: 1em 2em;
+    }
+    .site-header h1 { font-size: 1.5em; }
+    .site-header h1 a { color: #fff; }
+
+    /* メインナビゲーション */
+    .main-nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5em;
+      margin-top: 0.5em;
+    }
+    .main-nav a {
+      color: #bbdefb;
+      font-weight: bold;
+    }
+    .main-nav a:hover,
+    .main-nav a[aria-current="page"] {
+      color: #fff;
+    }
+
+    /* パンくずリスト */
+    .breadcrumb {
+      background: #e3f2fd;
+      padding: 0.5em 2em;
+    }
+    .breadcrumb ol {
+      list-style: none;
+      display: flex;
+      gap: 0.5em;
+      font-size: 0.9em;
+    }
+    .breadcrumb li + li::before {
+      content: ">";
+      margin-right: 0.5em;
+      color: #999;
+    }
+
+    /* メインコンテンツ（2カラムレイアウト） */
+    .content-wrapper {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1.5em;
+      display: flex;
+      gap: 2em;
+    }
+
+    /* 記事エリア */
+    .main-content {
+      flex: 3;
+      min-width: 0;
+    }
+
+    /* 記事カード */
+    .blog-article {
+      background: #fff;
+      border-radius: 8px;
+      padding: 2em;
+      margin-bottom: 1.5em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .article-header h2 {
+      color: #1565c0;
+      font-size: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    .article-meta {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 1.5em;
+    }
+    .article-meta span + span::before {
+      content: " | ";
+      color: #ccc;
+    }
+    .article-body h3 {
+      margin: 1.5em 0 0.5em;
+      color: #333;
+    }
+    .article-body p {
+      margin-bottom: 1em;
+    }
+    .article-body blockquote {
+      border-left: 4px solid #1565c0;
+      padding: 0.8em 1.2em;
+      margin: 1em 0;
+      background: #e3f2fd;
+      border-radius: 0 4px 4px 0;
+    }
+    .article-body code {
+      background: #f5f5f5;
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    .tag-list {
+      list-style: none;
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+    .tag-list li {
+      background: #e3f2fd;
+      padding: 0.2em 0.8em;
+      border-radius: 20px;
+      font-size: 0.85em;
+    }
+
+    /* 記事フッター */
+    .article-footer {
+      margin-top: 1.5em;
+      padding-top: 1em;
+      border-top: 1px solid #eee;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    /* コメントセクション */
+    .comments { margin-top: 1em; }
+    .comment {
+      background: #fafafa;
+      padding: 1em;
+      border-radius: 4px;
+      margin-bottom: 0.8em;
+    }
+    .comment-meta {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 0.3em;
+    }
+
+    /* 補足情報（記事内のaside） */
+    .note-box {
+      background: #fff3e0;
+      border-left: 4px solid #e65100;
+      padding: 0.8em 1.2em;
+      margin: 1em 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 0.95em;
+    }
+
+    /* サイドバー */
+    .sidebar {
+      flex: 1;
+      min-width: 200px;
+    }
+    .sidebar-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.2em;
+      margin-bottom: 1.5em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .sidebar-section h2 {
+      font-size: 1.1em;
+      color: #1565c0;
+      margin-bottom: 0.8em;
+      padding-bottom: 0.3em;
+      border-bottom: 2px solid #e3f2fd;
+    }
+    .sidebar-section ul {
+      list-style: none;
+    }
+    .sidebar-section li {
+      padding: 0.3em 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    /* ページフッター */
+    .site-footer {
+      background: #333;
+      color: #ccc;
+      padding: 2em;
+      text-align: center;
+      margin-top: 2em;
+    }
+    .site-footer a { color: #90caf9; }
+    .footer-nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      gap: 2em;
+      margin-bottom: 1em;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+      .content-wrapper {
+        flex-direction: column;
+      }
+      .main-nav ul {
+        flex-wrap: wrap;
+        gap: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!--
+    スキップリンク：
+    キーボードユーザーがナビゲーションをスキップして
+    メインコンテンツに直接ジャンプできるようにするためのリンクです。
+    通常は非表示で、Tabキーでフォーカスした時だけ表示されます。
+  -->
+  <a href="#main-content" class="skip-link">メインコンテンツへスキップ</a>
+
+  <!-- ========================================
+       ページヘッダー（header要素）
+       サイト全体の導入部分を表します。
+       暗黙のランドマーク: banner
+  ======================================== -->
+  <header class="site-header">
+    <h1><a href="#">TechBlog</a></h1>
+
+    <!--
+      nav要素：主要なナビゲーション
+      複数のnavがある場合はaria-labelで区別します。
+      暗黙のランドマーク: navigation
+    -->
+    <nav aria-label="メインナビゲーション" class="main-nav">
+      <ul>
+        <li><a href="#">ホーム</a></li>
+        <!--
+          aria-current="page" で現在のページを示します。
+          スクリーンリーダーが「現在のページ」と読み上げます。
+        -->
+        <li><a href="#" aria-current="page">記事一覧</a></li>
+        <li><a href="#">カテゴリ</a></li>
+        <li><a href="#">このブログについて</a></li>
+        <li><a href="#">お問い合わせ</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- パンくずリスト（nav要素で2つ目のナビゲーション） -->
+  <nav aria-label="パンくずリスト" class="breadcrumb">
+    <ol>
+      <li><a href="#">ホーム</a></li>
+      <li><a href="#">プログラミング</a></li>
+      <li aria-current="page">CSSグリッドで作るモダンレイアウト</li>
+    </ol>
+  </nav>
+
+  <!-- コンテンツ全体のラッパー -->
+  <div class="content-wrapper">
+
+    <!--
+      main要素：ページの主要コンテンツ
+      1ページに1つだけ配置します。
+      暗黙のランドマーク: main
+    -->
+    <main id="main-content" class="main-content">
+
+      <!--
+        article要素：自己完結型のコンテンツ
+        この記事だけを切り出しても意味が通じるコンテンツです。
+      -->
+      <article class="blog-article">
+
+        <!-- 記事のヘッダー（headerはarticle内にも使えます） -->
+        <header class="article-header">
+          <h2>CSSグリッドで作るモダンレイアウト</h2>
+          <p class="article-meta">
+            <span>
+              投稿日：<time datetime="2024-03-20">2024年3月20日</time>
+            </span>
+            <span>
+              更新日：<time datetime="2024-03-22">2024年3月22日</time>
+            </span>
+            <span>著者：田中太郎</span>
+            <span>カテゴリ：プログラミング</span>
+          </p>
+        </header>
+
+        <!-- 記事本文をsectionで論理的に分割 -->
+        <div class="article-body">
+
+          <section>
+            <h3>はじめに</h3>
+            <p>
+              CSS Grid Layout（CSSグリッドレイアウト）は、Webページのレイアウトを
+              効率的に構築するためのCSS機能です。従来のfloatやFlexboxだけでは
+              難しかった2次元レイアウトを、直感的に記述できるようになりました。
+            </p>
+            <p>
+              この記事では、CSS Gridの基本から実践的なテクニックまでを
+              わかりやすく解説します。
+            </p>
+          </section>
+
+          <section>
+            <h3>CSS Gridの基本概念</h3>
+            <p>
+              CSS Gridは、コンテナに <code>display: grid</code> を指定することで有効になります。
+              グリッドコンテナ内の子要素は自動的にグリッドアイテムになり、
+              行と列で構成されたグリッドに配置されます。
+            </p>
+
+            <blockquote cite="https://developer.mozilla.org/">
+              <p>
+                CSS Grid Layoutは、テーブルレイアウトのように行と列でコンテンツを配置できる
+                強力なレイアウトシステムです。
+              </p>
+            </blockquote>
+
+            <!--
+              aside要素（記事内）：補足情報
+              記事本文と関連するが、なくても本文の理解に影響しない情報です。
+            -->
+            <aside class="note-box">
+              <strong>補足：</strong>CSS Gridは2017年頃からモダンブラウザで対応が進み、
+              現在は主要なすべてのブラウザで利用できます。
+              Internet Explorer 11では一部の機能が制限されていましたが、
+              IE自体が2022年にサポート終了しているため、気にする必要はありません。
+            </aside>
+          </section>
+
+          <section>
+            <h3>FlexboxとGridの使い分け</h3>
+            <p>
+              Flexboxは<strong>1次元</strong>（横方向または縦方向のいずれか一方）のレイアウトに適しています。
+              一方、Gridは<strong>2次元</strong>（横方向と縦方向の両方）のレイアウトに適しています。
+            </p>
+            <p>
+              実際のWeb開発では、ページ全体のレイアウトにGridを使い、
+              ナビゲーションやカードの中の配置にFlexboxを使う、
+              といった組み合わせが効果的です。
+            </p>
+          </section>
+
+          <section>
+            <h3>まとめ</h3>
+            <p>
+              CSS Gridを使いこなすことで、複雑なレイアウトもシンプルなコードで実現できます。
+              まずは基本的なグリッド構造を理解し、徐々に応用的なテクニックを
+              身につけていきましょう。
+            </p>
+          </section>
+        </div>
+
+        <!-- 記事のフッター（著者情報、タグなど） -->
+        <footer class="article-footer">
+          <p>著者：<a href="#">田中太郎</a>（フロントエンドエンジニア）</p>
+          <p>タグ：</p>
+          <ul class="tag-list">
+            <li>CSS</li>
+            <li>Grid</li>
+            <li>レイアウト</li>
+            <li>フロントエンド</li>
+            <li>初心者向け</li>
+          </ul>
+        </footer>
+      </article>
+
+      <!--
+        コメントセクション：
+        article要素の中にさらにarticleをネストできます。
+        各コメントも自己完結型のコンテンツです。
+      -->
+      <section class="blog-article">
+        <h2>コメント（2件）</h2>
+        <div class="comments">
+          <article class="comment">
+            <header class="comment-meta">
+              <strong>鈴木花子</strong> -
+              <time datetime="2024-03-21T10:30">2024年3月21日 10:30</time>
+            </header>
+            <p>とてもわかりやすい記事でした。CSS Gridは難しそうと敬遠していましたが、基本から丁寧に説明されているので理解できました。</p>
+          </article>
+          <article class="comment">
+            <header class="comment-meta">
+              <strong>佐藤次郎</strong> -
+              <time datetime="2024-03-22T14:15">2024年3月22日 14:15</time>
+            </header>
+            <p>FlexboxとGridの使い分けがずっと曖昧だったのですが、この記事で整理できました。実務でも使ってみます！</p>
+          </article>
+        </div>
+      </section>
+
+    </main>
+
+    <!--
+      aside要素（サイドバー）：
+      メインコンテンツの補足的な内容です。
+      暗黙のランドマーク: complementary
+    -->
+    <aside aria-label="サイドバー" class="sidebar">
+
+      <!-- sectionで各ブロックを分ける -->
+      <section class="sidebar-section">
+        <h2>プロフィール</h2>
+        <p>田中太郎</p>
+        <p>Webエンジニア。フロントエンド開発を中心に情報を発信しています。</p>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>カテゴリ</h2>
+        <ul>
+          <li><a href="#">HTML (12)</a></li>
+          <li><a href="#">CSS (8)</a></li>
+          <li><a href="#">JavaScript (15)</a></li>
+          <li><a href="#">React (6)</a></li>
+          <li><a href="#">その他 (4)</a></li>
+        </ul>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>人気の記事</h2>
+        <ul>
+          <li><a href="#">Flexbox完全ガイド</a></li>
+          <li><a href="#">HTML5セマンティクス入門</a></li>
+          <li><a href="#">JavaScriptの非同期処理</a></li>
+          <li><a href="#">Reactフック入門</a></li>
+        </ul>
+      </section>
+
+      <section class="sidebar-section">
+        <h2>アーカイブ</h2>
+        <ul>
+          <li><a href="#">2024年3月 (5)</a></li>
+          <li><a href="#">2024年2月 (8)</a></li>
+          <li><a href="#">2024年1月 (6)</a></li>
+          <li><a href="#">2023年12月 (4)</a></li>
+        </ul>
+      </section>
+    </aside>
+
+  </div>
+
+  <!--
+    ページフッター（footer要素）
+    サイト全体のフッターです。
+    暗黙のランドマーク: contentinfo
+  -->
+  <footer class="site-footer">
+    <!-- フッター内のナビゲーション -->
+    <nav aria-label="フッターナビゲーション" class="footer-nav">
+      <ul>
+        <li><a href="#">プライバシーポリシー</a></li>
+        <li><a href="#">利用規約</a></li>
+        <li><a href="#">サイトマップ</a></li>
+        <li><a href="#">お問い合わせ</a></li>
+      </ul>
+    </nav>
+
+    <!--
+      address要素：連絡先情報
+      最も近いarticleまたはbodyの連絡先を表します。
+    -->
+    <address>
+      お問い合わせ：
+      <a href="mailto:info@techblog.example.com">info@techblog.example.com</a>
+    </address>
+
+    <p><small>&copy; 2024 TechBlog. All rights reserved.</small></p>
+  </footer>
+
+</body>
+</html>

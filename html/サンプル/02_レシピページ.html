@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル02：レシピページ
+    ============================================================
+    【学べる内容】
+    - 順序なしリスト（ul / li）で材料一覧を表現する
+    - 順序付きリスト（ol / li）で手順を表現する
+    - 定義リスト（dl / dt / dd）で用語説明を表現する
+    - リストの入れ子（ネスト）で詳細な分類を行う
+    - テーブル（table / thead / tbody / th / td）で栄養成分表を作る
+    - セルの結合（colspan / rowspan）の使い方
+    - caption要素でテーブルのタイトルを付ける
+    - セクション（section）要素でページを論理的に分割する
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+
+    【対応する教材】
+    第4章：リストとテーブル
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レシピページ | HTML学習サンプル</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 750px;
+      margin: 2em auto;
+      padding: 0 1em;
+      line-height: 1.8;
+      color: #333;
+    }
+    h1 {
+      color: #d35400;
+      border-bottom: 3px solid #d35400;
+      padding-bottom: 0.3em;
+    }
+    h2 {
+      color: #d35400;
+      margin-top: 2em;
+    }
+    h3 {
+      color: #e67e22;
+    }
+    .recipe-meta {
+      background: #fef9e7;
+      padding: 1em 1.5em;
+      border-radius: 8px;
+      margin-bottom: 1.5em;
+    }
+    .recipe-meta dl {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.3em 1em;
+      margin: 0;
+    }
+    .recipe-meta dt {
+      font-weight: bold;
+    }
+    .recipe-meta dd {
+      margin: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+    caption {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 0.5em;
+      text-align: left;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.6em 0.8em;
+      text-align: left;
+    }
+    th {
+      background: #fdebd0;
+      font-weight: bold;
+    }
+    tbody tr:nth-child(even) {
+      background: #fef9e7;
+    }
+    tfoot {
+      font-weight: bold;
+      background: #fdebd0;
+    }
+    ol.steps li {
+      margin-bottom: 0.8em;
+      padding-left: 0.3em;
+    }
+    .tip {
+      background: #eaf2f8;
+      border-left: 4px solid #2980b9;
+      padding: 0.8em 1em;
+      margin: 1em 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .tip strong {
+      color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>親子丼の作り方</h1>
+
+  <!-- 定義リスト（dl / dt / dd）でレシピの基本情報を表示 -->
+  <div class="recipe-meta">
+    <dl>
+      <dt>調理時間</dt>
+      <dd>約30分</dd>
+      <dt>分量</dt>
+      <dd>2人前</dd>
+      <dt>難易度</dt>
+      <dd>初級（はじめてでも安心です）</dd>
+      <dt>カロリー</dt>
+      <dd>約550kcal（1人前あたり）</dd>
+    </dl>
+  </div>
+
+  <p>
+    親子丼は、鶏肉と卵を使った日本の定番家庭料理です。
+    甘辛いだし汁で煮た鶏肉をふわふわの卵でとじ、ご飯にのせます。
+    シンプルな材料で手軽に作れる一品です。
+  </p>
+
+  <hr>
+
+  <!-- セクションで論理的にページを分割 -->
+  <section>
+    <h2>材料（2人前）</h2>
+
+    <!-- 順序なしリスト（ul）で材料を一覧表示 -->
+    <h3>メインの材料</h3>
+    <ul>
+      <li>鶏もも肉 — 200g</li>
+      <li>卵 — 3個</li>
+      <li>玉ねぎ — 1/2個</li>
+      <li>ご飯 — 丼2杯分</li>
+    </ul>
+
+    <h3>調味料</h3>
+    <!-- 入れ子（ネスト）リストで詳細を分類 -->
+    <ul>
+      <li>だし汁 — 200ml
+        <ul>
+          <li>水 200ml + 顆粒だし 小さじ1 で代用可</li>
+        </ul>
+      </li>
+      <li>しょうゆ — 大さじ2</li>
+      <li>みりん — 大さじ2</li>
+      <li>砂糖 — 大さじ1</li>
+      <li>酒 — 大さじ1</li>
+    </ul>
+
+    <h3>トッピング（お好みで）</h3>
+    <ul>
+      <li>三つ葉</li>
+      <li>刻みのり</li>
+      <li>七味唐辛子</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>作り方</h2>
+
+    <!-- 順序付きリスト（ol）で手順を番号付きで表示 -->
+    <ol class="steps">
+      <li>
+        <strong>下準備をする：</strong>
+        鶏もも肉を一口大に切ります。玉ねぎは薄切りにします。卵は軽く溶きほぐしておきます。
+      </li>
+      <li>
+        <strong>だし汁を作る：</strong>
+        小さめのフライパン（または親子鍋）にだし汁、しょうゆ、みりん、砂糖、酒を入れて中火にかけます。
+      </li>
+      <li>
+        <strong>玉ねぎを煮る：</strong>
+        だし汁が沸いたら玉ねぎを加え、2〜3分煮て柔らかくします。
+      </li>
+      <li>
+        <strong>鶏肉を煮る：</strong>
+        鶏肉を加え、中火で5〜6分、火が通るまで煮ます。途中でアクが出たら取り除きます。
+      </li>
+      <li>
+        <strong>卵でとじる（1回目）：</strong>
+        溶き卵の2/3量を回し入れます。ふたをして<strong>中火で約1分</strong>加熱します。
+      </li>
+      <li>
+        <strong>卵でとじる（2回目）：</strong>
+        残りの卵を回し入れ、ふたをして火を止めます。<strong>余熱で30秒〜1分</strong>蒸らします。
+      </li>
+      <li>
+        <strong>盛り付ける：</strong>
+        丼にご飯を盛り、上から親子丼の具をスライドさせてのせます。お好みで三つ葉を散らして完成です。
+      </li>
+    </ol>
+
+    <div class="tip">
+      <strong>プロのコツ：</strong>
+      卵は2回に分けて入れることで、半熟のふわふわ食感に仕上がります。
+      卵に完全に火を通さず、余熱で仕上げるのがポイントです。
+    </div>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>栄養成分表（1人前あたり）</h2>
+
+    <!--
+      テーブルの構造：
+      - caption: テーブルのタイトル
+      - thead: ヘッダー行（列の見出し）
+      - tbody: データ行
+      - tfoot: フッター行（合計など）
+      - th: 見出しセル
+      - td: データセル
+    -->
+    <table>
+      <caption>親子丼の栄養成分（概算値）</caption>
+      <thead>
+        <tr>
+          <th>栄養素</th>
+          <th>含有量</th>
+          <th>1日の推奨量に対する割合</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>エネルギー</td>
+          <td>550 kcal</td>
+          <td>約25%</td>
+        </tr>
+        <tr>
+          <td>たんぱく質</td>
+          <td>30.5 g</td>
+          <td>約50%</td>
+        </tr>
+        <tr>
+          <td>脂質</td>
+          <td>15.2 g</td>
+          <td>約22%</td>
+        </tr>
+        <tr>
+          <td>炭水化物</td>
+          <td>68.0 g</td>
+          <td>約22%</td>
+        </tr>
+        <tr>
+          <td>食塩相当量</td>
+          <td>3.2 g</td>
+          <td>約41%</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>アレンジレシピ</h2>
+
+    <!--
+      テーブルでアレンジ一覧を表示します。
+      colspan（列の結合）を使ってヘッダーをまとめています。
+    -->
+    <table>
+      <caption>親子丼のアレンジバリエーション</caption>
+      <thead>
+        <tr>
+          <!-- colspanで2つの列をまたぐヘッダーセル -->
+          <th colspan="2">アレンジ名と変更点</th>
+          <th>難易度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>他人丼</strong></td>
+          <td>鶏肉の代わりに豚肉を使用</td>
+          <td>初級</td>
+        </tr>
+        <tr>
+          <td><strong>きのこ親子丼</strong></td>
+          <td>しめじやえのきを追加</td>
+          <td>初級</td>
+        </tr>
+        <tr>
+          <td><strong>親子丼（とろろ添え）</strong></td>
+          <td>山芋のすりおろしをトッピング</td>
+          <td>初級</td>
+        </tr>
+        <tr>
+          <td><strong>カツ丼風</strong></td>
+          <td>鶏肉をカツに変更、だし汁で煮る</td>
+          <td>中級</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <section>
+    <h2>料理用語の解説</h2>
+
+    <!--
+      定義リスト（dl / dt / dd）は用語と説明のペアに最適です。
+      料理用語の解説のような場面で使います。
+    -->
+    <dl>
+      <dt><strong>アクを取る</strong></dt>
+      <dd>
+        煮物や汁物を作るとき、表面に浮いてくる泡状の不純物（アク）を
+        お玉やスプーンで取り除くことです。料理の味をクリアにします。
+      </dd>
+
+      <dt><strong>回し入れる</strong></dt>
+      <dd>
+        溶き卵などの液体を、フライパンの中心から外側に向かって円を描くように
+        流し入れることです。均一に広がるようにするテクニックです。
+      </dd>
+
+      <dt><strong>余熱で仕上げる</strong></dt>
+      <dd>
+        火を止めた後の鍋やフライパンに残っている熱を利用して、
+        食材に火を通すことです。加熱しすぎを防ぐテクニックです。
+      </dd>
+
+      <dt><strong>一口大</strong></dt>
+      <dd>
+        一口で食べられるサイズ（約2〜3cm角）に食材を切ることです。
+        火の通りが均一になり、食べやすくなります。
+      </dd>
+    </dl>
+  </section>
+
+  <hr>
+
+  <p><small>&copy; 2024 HTML学習サンプル - レシピページ</small></p>
+
+</body>
+</html>

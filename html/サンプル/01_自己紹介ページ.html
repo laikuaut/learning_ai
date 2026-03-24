@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル01：自己紹介ページ
+    ============================================================
+    【学べる内容】
+    - HTMLの基本構造（DOCTYPE, html, head, body）
+    - 見出しタグ（h1, h2, h3）の階層的な使い方
+    - 段落（p）タグによる文章の記述
+    - リンク（a）タグの使い方（外部リンク、メールリンク）
+    - 画像（img）タグの使い方（alt属性の重要性）
+    - 強調（strong, em）タグによるテキストの意味付け
+    - 水平線（hr）による区切り
+    - リスト（ul, li）の基本
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+
+    【対応する教材】
+    第1章：HTMLの基本構造
+    第2章：テキストとリンク
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自己紹介ページ | HTML学習サンプル</title>
+  <style>
+    /* 最小限のスタイルで見た目を整えています（HTML学習が主目的です） */
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 2em auto;
+      padding: 0 1em;
+      line-height: 1.8;
+      color: #333;
+    }
+    h1 {
+      color: #2c5f2d;
+      border-bottom: 3px solid #2c5f2d;
+      padding-bottom: 0.3em;
+    }
+    h2 {
+      color: #2c5f2d;
+      margin-top: 1.5em;
+    }
+    .profile-header {
+      text-align: center;
+      margin-bottom: 2em;
+    }
+    .profile-img {
+      border-radius: 50%;
+      border: 4px solid #2c5f2d;
+    }
+    .skills li {
+      margin-bottom: 0.3em;
+    }
+    a {
+      color: #1a73e8;
+    }
+    a:hover {
+      text-decoration: none;
+    }
+    .contact-info {
+      background: #f0f7f0;
+      padding: 1em 1.5em;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ページ全体のタイトル（h1は1ページに1つ） -->
+  <div class="profile-header">
+    <!--
+      画像が存在しない場合でも、alt属性のテキストが表示されます。
+      ここではプレースホルダー画像を使用しています。
+    -->
+    <img
+      src="https://via.placeholder.com/150/2c5f2d/ffffff?text=Photo"
+      alt="田中太郎のプロフィール写真"
+      width="150"
+      height="150"
+      class="profile-img"
+    >
+    <h1>田中 太郎（Taro Tanaka）</h1>
+    <p><em>Webエンジニア / フロントエンド開発者</em></p>
+  </div>
+
+  <hr>
+
+  <!-- h2は各セクションの見出しとして使います -->
+  <h2>自己紹介</h2>
+  <p>
+    はじめまして、田中太郎と申します。東京都在住の<strong>Webエンジニア</strong>です。
+    フロントエンド開発を中心に、<strong>HTML</strong>・<strong>CSS</strong>・<strong>JavaScript</strong>を使った
+    Webサイト制作を行っています。
+  </p>
+  <p>
+    プログラミングを始めたのは大学時代で、最初に学んだ言語は<em>Python</em>でした。
+    その後、Web技術に興味を持ち、現在はフルスタック開発にも挑戦しています。
+  </p>
+
+  <h2>スキル</h2>
+  <!-- 順序が重要でない一覧にはulを使います -->
+  <ul class="skills">
+    <li><strong>HTML5</strong> / <strong>CSS3</strong> — Webページの構造とスタイリング</li>
+    <li><strong>JavaScript</strong> — 動的なWebアプリケーション開発</li>
+    <li><strong>React</strong> — コンポーネントベースのUI構築</li>
+    <li><strong>Node.js</strong> — サーバーサイド開発</li>
+    <li><strong>Git</strong> — バージョン管理</li>
+  </ul>
+
+  <h2>趣味・関心</h2>
+  <p>
+    仕事以外では、以下のような趣味を楽しんでいます。
+  </p>
+  <ul>
+    <li>読書（技術書・SF小説が好きです）</li>
+    <li>ランニング（週末は公園を走っています）</li>
+    <li>カフェ巡り（美味しいコーヒーを探すのが好きです）</li>
+    <li>写真撮影（風景写真をよく撮ります）</li>
+  </ul>
+
+  <h2>経歴</h2>
+  <!-- h3はh2の下位の見出しです。階層構造を守りましょう -->
+  <h3>2020年〜現在：株式会社テックカンパニー</h3>
+  <p>
+    フロントエンドエンジニアとして、ECサイトのUI開発を担当しています。
+    <strong>React</strong>と<strong>TypeScript</strong>を使ったSPA開発が主な業務です。
+  </p>
+
+  <h3>2016年〜2020年：フリーランス</h3>
+  <p>
+    個人でWebサイト制作を請け負っていました。
+    小規模なコーポレートサイトからランディングページまで、幅広く対応していました。
+  </p>
+
+  <h3>2012年〜2016年：○○大学 情報工学部</h3>
+  <p>
+    コンピュータサイエンスの基礎を学びました。
+    卒業研究のテーマは「Webアクセシビリティの自動評価ツールの開発」でした。
+  </p>
+
+  <hr>
+
+  <h2>お気に入りのWebサイト</h2>
+  <p>よく参考にしているWebサイトです。</p>
+  <ul>
+    <!--
+      a要素（アンカー）でリンクを作成します。
+      target="_blank" で新しいタブで開きます。
+      rel="noopener noreferrer" はセキュリティ対策です。
+    -->
+    <li>
+      <a href="https://developer.mozilla.org/ja/" target="_blank" rel="noopener noreferrer">
+        MDN Web Docs
+      </a>
+      — Web技術のリファレンス
+    </li>
+    <li>
+      <a href="https://zenn.dev/" target="_blank" rel="noopener noreferrer">
+        Zenn
+      </a>
+      — エンジニアのための情報共有プラットフォーム
+    </li>
+    <li>
+      <a href="https://qiita.com/" target="_blank" rel="noopener noreferrer">
+        Qiita
+      </a>
+      — プログラミングに関する知識を共有するサービス
+    </li>
+  </ul>
+
+  <hr>
+
+  <h2>連絡先</h2>
+  <div class="contact-info">
+    <p>お仕事のご依頼・ご相談はお気軽にどうぞ。</p>
+    <ul>
+      <!--
+        mailto: でメールリンクを作成できます。
+        クリックするとメールアプリが開きます。
+      -->
+      <li>メール：<a href="mailto:tanaka@example.com">tanaka@example.com</a></li>
+      <!--
+        tel: で電話リンクを作成できます。
+        スマートフォンではタップで電話をかけられます。
+      -->
+      <li>電話：<a href="tel:090-1234-5678">090-1234-5678</a></li>
+      <li>
+        GitHub：
+        <a href="https://github.com/" target="_blank" rel="noopener noreferrer">
+          github.com/tanaka-taro
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- ページの末尾に著作権表示を入れるのが一般的です -->
+  <p><small>&copy; 2024 田中太郎. All rights reserved.</small></p>
+
+</body>
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!--
+    ============================================================
+    サンプル07：ダッシュボード
+    ============================================================
+    【学べる内容】
+    - details / summary 要素でアコーディオンUI（FAQ・設定パネル）を作る
+    - progress 要素で処理の進捗を視覚的に表示する
+    - meter 要素で測定値（ディスク容量、バッテリー残量等）を表示する
+    - dialog 要素でモーダルダイアログを実装する
+    - template 要素でHTMLテンプレートを定義し、JSで複製して使う
+    - output 要素で計算結果をリアルタイムに表示する
+    - wbr 要素で長い文字列の改行位置を制御する
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+    ボタンやアコーディオンをクリックして動作を確認してください。
+
+    【対応する教材】
+    第8章：HTML5の便利な要素とAPI
+  -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プロジェクトダッシュボード | HTML学習サンプル</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: #f0f2f5;
+    }
+
+    /* ヘッダー */
+    .dashboard-header {
+      background: #37474f;
+      color: #fff;
+      padding: 1em 2em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dashboard-header h1 { font-size: 1.3em; }
+
+    /* メインレイアウト */
+    .dashboard-main {
+      max-width: 1000px;
+      margin: 1.5em auto;
+      padding: 0 1em;
+    }
+
+    /* カードグリッド */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5em;
+      margin-bottom: 1.5em;
+    }
+
+    /* カード */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.5em;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 1.1em;
+      color: #37474f;
+      margin-bottom: 1em;
+      padding-bottom: 0.5em;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .card h3 {
+      font-size: 1em;
+      color: #546e7a;
+      margin: 1em 0 0.5em;
+    }
+
+    /* ステータスバッジ */
+    .status {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+    .status-ok { background: #e8f5e9; color: #2e7d32; }
+    .status-warn { background: #fff3e0; color: #e65100; }
+    .status-error { background: #ffebee; color: #c62828; }
+
+    /* progress / meter のスタイル */
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0.6em 0;
+      gap: 0.8em;
+    }
+    .metric-label { min-width: 100px; font-weight: bold; }
+    .metric-value { min-width: 60px; text-align: right; font-size: 0.9em; }
+    progress, meter {
+      flex: 1;
+      height: 20px;
+    }
+
+    /* details / summary のスタイル */
+    details {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 0.5em;
+    }
+    summary {
+      padding: 0.7em 1em;
+      font-weight: bold;
+      cursor: pointer;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+    summary:hover { background: #f0f0f0; }
+    details[open] summary {
+      border-bottom: 1px solid #e0e0e0;
+      border-radius: 4px 4px 0 0;
+    }
+    details .detail-content {
+      padding: 1em;
+    }
+
+    /* dialog のスタイル */
+    dialog {
+      border: none;
+      border-radius: 8px;
+      padding: 2em;
+      max-width: 450px;
+      width: 90%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+    dialog::backdrop {
+      background: rgba(0,0,0,0.5);
+    }
+    dialog h2 {
+      margin-bottom: 0.8em;
+      color: #37474f;
+    }
+    .dialog-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5em;
+      margin-top: 1.5em;
+    }
+
+    /* ボタン */
+    button {
+      padding: 0.5em 1.2em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+      background: #fff;
+    }
+    button:hover { background: #f5f5f5; }
+    .btn-primary {
+      background: #1565c0;
+      color: #fff;
+      border-color: #1565c0;
+    }
+    .btn-primary:hover { background: #0d47a1; }
+    .btn-danger {
+      background: #c62828;
+      color: #fff;
+      border-color: #c62828;
+    }
+    .btn-danger:hover { background: #b71c1c; }
+    .btn-small {
+      padding: 0.3em 0.8em;
+      font-size: 0.85em;
+    }
+
+    /* template で生成されるタスクカード */
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6em 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-priority {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5em;
+    }
+    .priority-high { background: #c62828; }
+    .priority-medium { background: #ff8f00; }
+    .priority-low { background: #2e7d32; }
+
+    /* output のスタイル */
+    output {
+      font-weight: bold;
+      color: #1565c0;
+      font-size: 1.1em;
+    }
+
+    /* 通知エリア */
+    #notification-area {
+      position: fixed;
+      top: 1em;
+      right: 1em;
+      z-index: 1000;
+    }
+    .notification {
+      background: #333;
+      color: #fff;
+      padding: 0.8em 1.2em;
+      border-radius: 4px;
+      margin-bottom: 0.5em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* 全幅カード */
+    .full-width { grid-column: 1 / -1; }
+
+    /* wbr デモ */
+    .long-text {
+      font-family: monospace;
+      background: #f5f5f5;
+      padding: 0.5em;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 通知エリア（aria-live で動的コンテンツの変更をスクリーンリーダーに通知） -->
+  <div id="notification-area" aria-live="polite"></div>
+
+  <!-- ダッシュボードヘッダー -->
+  <header class="dashboard-header">
+    <h1>プロジェクトダッシュボード</h1>
+    <div>
+      <button class="btn-small" onclick="openSettingsDialog()">設定</button>
+      <button class="btn-small btn-primary" onclick="openNewTaskDialog()">+ タスク追加</button>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+
+    <!-- ========================================
+         上段：ステータスカード
+    ======================================== -->
+    <div class="card-grid">
+
+      <!-- progress要素：プロジェクトの進捗表示 -->
+      <div class="card">
+        <h2>プロジェクト進捗</h2>
+
+        <h3>フロントエンド開発</h3>
+        <div class="metric-row">
+          <span class="metric-label">進捗</span>
+          <!--
+            progress要素：処理の進捗を視覚的に表示します。
+            value: 現在の値
+            max: 最大値
+            タグ内のテキスト（75%）は、ブラウザが非対応の場合のフォールバックです。
+          -->
+          <progress value="75" max="100">75%</progress>
+          <span class="metric-value">75%</span>
+        </div>
+
+        <h3>バックエンド開発</h3>
+        <div class="metric-row">
+          <span class="metric-label">進捗</span>
+          <progress value="45" max="100">45%</progress>
+          <span class="metric-value">45%</span>
+        </div>
+
+        <h3>テスト</h3>
+        <div class="metric-row">
+          <span class="metric-label">進捗</span>
+          <progress value="20" max="100">20%</progress>
+          <span class="metric-value">20%</span>
+        </div>
+
+        <h3>ドキュメント</h3>
+        <div class="metric-row">
+          <span class="metric-label">進捗</span>
+          <!--
+            value属性を省略すると「不確定な進捗」（ローディング）になります。
+          -->
+          <progress>作業中...</progress>
+          <span class="metric-value">作業中</span>
+        </div>
+
+        <div style="margin-top: 1em;">
+          <button class="btn-small" onclick="simulateProgress()">進捗アニメーションデモ</button>
+          <div class="metric-row" style="margin-top: 0.5em;">
+            <span class="metric-label">デモ</span>
+            <progress id="demo-progress" value="0" max="100">0%</progress>
+            <span id="demo-progress-text" class="metric-value">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- meter要素：システムリソースの測定値表示 -->
+      <div class="card">
+        <h2>サーバーリソース</h2>
+
+        <h3>CPU使用率 <span class="status status-ok">正常</span></h3>
+        <div class="metric-row">
+          <span class="metric-label">使用率</span>
+          <!--
+            meter要素：範囲内の測定値を視覚的に表示します。
+            value: 現在の値
+            min/max: 値の範囲
+            low: 「低い」閾値
+            high: 「高い」閾値
+            optimum: 「最適」な値（この値に近いほど良い色で表示）
+          -->
+          <meter value="35" min="0" max="100"
+                 low="50" high="80" optimum="20">35%</meter>
+          <span class="metric-value">35%</span>
+        </div>
+
+        <h3>メモリ使用量 <span class="status status-warn">注意</span></h3>
+        <div class="metric-row">
+          <span class="metric-label">使用量</span>
+          <meter value="72" min="0" max="100"
+                 low="50" high="80" optimum="20">72%</meter>
+          <span class="metric-value">72%</span>
+        </div>
+
+        <h3>ディスク使用量 <span class="status status-error">警告</span></h3>
+        <div class="metric-row">
+          <span class="metric-label">使用量</span>
+          <!--
+            optimumが低い値の場合、値がhighを超えると警告色になります
+          -->
+          <meter value="92" min="0" max="100"
+                 low="50" high="80" optimum="20">92%</meter>
+          <span class="metric-value">92%</span>
+        </div>
+
+        <h3>バッテリー残量</h3>
+        <div class="metric-row">
+          <span class="metric-label">残量</span>
+          <!--
+            optimumが高い値の場合、値がlow未満だと警告色になります
+          -->
+          <meter value="15" min="0" max="100"
+                 low="20" high="80" optimum="90">15%</meter>
+          <span class="metric-value">15%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================
+         中段：アコーディオンとタスクリスト
+    ======================================== -->
+    <div class="card-grid">
+
+      <!-- details / summary：FAQ・設定のアコーディオン -->
+      <div class="card">
+        <h2>プロジェクト情報（details / summary）</h2>
+        <p style="margin-bottom: 0.8em; font-size: 0.9em; color: #666;">
+          各項目をクリックすると内容が展開/折りたたみされます
+        </p>
+
+        <!--
+          details / summary 要素：
+          クリックで開閉するアコーディオンUIを
+          JavaScriptなしで実装できます。
+        -->
+        <details>
+          <summary>プロジェクト概要</summary>
+          <div class="detail-content">
+            <p><strong>プロジェクト名：</strong>ECサイトリニューアル</p>
+            <p><strong>開始日：</strong>2024年1月15日</p>
+            <p><strong>予定完了日：</strong>2024年6月30日</p>
+            <p><strong>チーム人数：</strong>8名</p>
+          </div>
+        </details>
+
+        <!-- open属性を付けると最初から開いた状態になります -->
+        <details open>
+          <summary>今週のマイルストーン</summary>
+          <div class="detail-content">
+            <ul>
+              <li>ユーザー認証機能の実装完了</li>
+              <li>商品検索APIのテスト</li>
+              <li>管理画面のUIレビュー</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>使用技術スタック</summary>
+          <div class="detail-content">
+            <ul>
+              <li><strong>フロントエンド：</strong>React, TypeScript, Tailwind CSS</li>
+              <li><strong>バックエンド：</strong>Node.js, Express, PostgreSQL</li>
+              <li><strong>インフラ：</strong>AWS (EC2, RDS, S3)</li>
+              <li><strong>CI/CD：</strong>GitHub Actions</li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>リスクと課題</summary>
+          <div class="detail-content">
+            <ol>
+              <li>外部API連携の仕様が未確定（確認待ち）</li>
+              <li>テスト環境のディスク容量が不足気味</li>
+              <li>デザインの確定が遅れている（1週間遅延）</li>
+            </ol>
+          </div>
+        </details>
+
+        <details>
+          <summary>メンバーの連絡先</summary>
+          <div class="detail-content">
+            <p>
+              <!-- wbr要素：長いURLの改行位置を制御 -->
+              共有ドキュメント：<br>
+              <span class="long-text">
+                https://docs.example.com/<wbr>projects/<wbr>ec-renewal/<wbr>2024/<wbr>shared-documents/<wbr>overview
+              </span>
+            </p>
+          </div>
+        </details>
+      </div>
+
+      <!-- template要素：タスクリスト -->
+      <div class="card">
+        <h2>タスクリスト（template要素）</h2>
+        <p style="margin-bottom: 0.8em; font-size: 0.9em; color: #666;">
+          template要素から動的にタスクカードを生成しています
+        </p>
+
+        <button class="btn-small" onclick="loadTasks()" style="margin-bottom: 1em;">
+          タスクを読み込む
+        </button>
+        <button class="btn-small" onclick="clearTasks()">
+          クリア
+        </button>
+
+        <div id="task-container">
+          <p style="color: #999; font-style: italic;">「タスクを読み込む」ボタンを押してください</p>
+        </div>
+
+        <!--
+          template要素：ページには表示されないHTMLテンプレートです。
+          JavaScriptから content.cloneNode(true) でコピーして使います。
+          画像のダウンロードやスクリプトの実行も行われません。
+        -->
+        <template id="task-template">
+          <div class="task-item">
+            <div>
+              <span class="task-priority"></span>
+              <span class="task-name"></span>
+            </div>
+            <span class="task-assignee" style="font-size: 0.85em; color: #666;"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- ========================================
+         下段：output要素とダイアログデモ
+    ======================================== -->
+    <div class="card-grid">
+
+      <!-- output要素：計算結果のリアルタイム表示 -->
+      <div class="card">
+        <h2>コスト計算（output要素）</h2>
+        <!--
+          output要素は、計算結果やユーザー操作の結果を表示するための
+          セマンティックな要素です。
+          for属性で、どの入力要素の結果かを示します。
+        -->
+        <form oninput="updateCostCalculation()">
+          <div style="margin-bottom: 0.8em;">
+            <label for="hours">月間作業時間（h）：</label>
+            <input type="number" id="hours" name="hours" value="160"
+                   min="1" max="744" style="width: 100px;">
+          </div>
+          <div style="margin-bottom: 0.8em;">
+            <label for="rate">時給（円）：</label>
+            <input type="number" id="rate" name="rate" value="3000"
+                   min="100" step="100" style="width: 120px;">
+          </div>
+          <div style="margin-bottom: 0.8em;">
+            <label for="members">メンバー数：</label>
+            <input type="range" id="members" name="members"
+                   min="1" max="20" value="5" style="width: 150px; vertical-align: middle;">
+            <output for="members" id="members-display">5</output> 名
+          </div>
+          <hr style="margin: 1em 0;">
+          <p>
+            月間コスト：<output name="monthly-cost" id="monthly-cost" for="hours rate members">2,400,000</output> 円
+          </p>
+          <p>
+            年間コスト：<output name="yearly-cost" id="yearly-cost" for="hours rate members">28,800,000</output> 円
+          </p>
+        </form>
+      </div>
+
+      <!-- dialog要素のデモ -->
+      <div class="card">
+        <h2>ダイアログ（dialog要素）</h2>
+        <p style="margin-bottom: 1em; font-size: 0.9em; color: #666;">
+          dialog要素を使ったモーダルのデモです
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.5em;">
+          <button onclick="openConfirmDialog()">確認ダイアログを開く</button>
+          <button onclick="openFormDialog()">入力フォーム付きダイアログを開く</button>
+          <button class="btn-danger" onclick="openDeleteDialog()">削除確認ダイアログを開く</button>
+        </div>
+
+        <p id="dialog-result" style="margin-top: 1em; font-size: 0.9em; color: #666;"></p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================
+       dialog要素の定義
+  ======================================== -->
+
+  <!-- 確認ダイアログ -->
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">変更の確認</h2>
+    <p>プロジェクトのステータスを「レビュー中」に変更しますか？</p>
+    <!--
+      form method="dialog" を使うと、
+      ボタンのvalueがdialog.returnValueに設定され、
+      ダイアログが自動で閉じます。
+    -->
+    <div class="dialog-buttons">
+      <form method="dialog">
+        <button value="cancel">キャンセル</button>
+        <button value="confirm" class="btn-primary">変更する</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- フォーム付きダイアログ -->
+  <dialog id="form-dialog" aria-labelledby="form-dialog-title">
+    <h2 id="form-dialog-title">新規タスクの追加</h2>
+    <form method="dialog" id="task-form">
+      <div style="margin-bottom: 0.8em;">
+        <label for="task-name" style="display: block; font-weight: bold;">タスク名：</label>
+        <input type="text" id="task-name" required style="width: 100%; padding: 0.5em;">
+      </div>
+      <div style="margin-bottom: 0.8em;">
+        <label for="task-priority" style="display: block; font-weight: bold;">優先度：</label>
+        <select id="task-priority" style="width: 100%; padding: 0.5em;">
+          <option value="high">高</option>
+          <option value="medium" selected>中</option>
+          <option value="low">低</option>
+        </select>
+      </div>
+      <div class="dialog-buttons">
+        <button value="cancel" type="button"
+                onclick="document.getElementById('form-dialog').close('cancel')">キャンセル</button>
+        <button value="add" class="btn-primary">追加</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 削除確認ダイアログ -->
+  <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-desc">
+    <h2 id="delete-title" style="color: #c62828;">削除の確認</h2>
+    <p id="delete-desc">このタスクを削除してもよろしいですか？この操作は取り消せません。</p>
+    <div class="dialog-buttons">
+      <form method="dialog">
+        <button value="cancel">キャンセル</button>
+        <button value="delete" class="btn-danger">削除する</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 設定ダイアログ -->
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <h2 id="settings-title">ダッシュボード設定</h2>
+    <form method="dialog">
+      <div style="margin-bottom: 0.8em;">
+        <label>
+          <input type="checkbox" checked> 通知を表示する
+        </label>
+      </div>
+      <div style="margin-bottom: 0.8em;">
+        <label>
+          <input type="checkbox" checked> 自動更新（5分ごと）
+        </label>
+      </div>
+      <div style="margin-bottom: 0.8em;">
+        <label>テーマ：</label>
+        <select style="padding: 0.3em;">
+          <option>ライト</option>
+          <option>ダーク</option>
+          <option>システム設定に従う</option>
+        </select>
+      </div>
+      <div class="dialog-buttons">
+        <button value="cancel">キャンセル</button>
+        <button value="save" class="btn-primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    // ========================================
+    // progress のアニメーションデモ
+    // ========================================
+    function simulateProgress() {
+      const bar = document.getElementById('demo-progress');
+      const text = document.getElementById('demo-progress-text');
+      let value = 0;
+      bar.value = 0;
+      text.textContent = '0%';
+
+      const interval = setInterval(() => {
+        value += Math.floor(Math.random() * 5) + 1;
+        if (value > 100) value = 100;
+        bar.value = value;
+        text.textContent = value + '%';
+        if (value >= 100) {
+          clearInterval(interval);
+          text.textContent = '完了！';
+          showNotification('進捗アニメーションが完了しました');
+        }
+      }, 100);
+    }
+
+    // ========================================
+    // template からタスクを生成
+    // ========================================
+    function loadTasks() {
+      const template = document.getElementById('task-template');
+      const container = document.getElementById('task-container');
+      container.innerHTML = '';
+
+      const tasks = [
+        { name: 'ログイン画面のUI修正', priority: 'high', assignee: '田中' },
+        { name: '商品検索APIの結合テスト', priority: 'high', assignee: '鈴木' },
+        { name: 'レスポンシブ対応（タブレット）', priority: 'medium', assignee: '佐藤' },
+        { name: 'パフォーマンス計測', priority: 'medium', assignee: '田中' },
+        { name: 'コードレビュー対応', priority: 'medium', assignee: '高橋' },
+        { name: 'READMEの更新', priority: 'low', assignee: '鈴木' },
+        { name: 'ライブラリのバージョンアップ', priority: 'low', assignee: '佐藤' },
+      ];
+
+      // template.content.cloneNode(true) で複製して追加
+      tasks.forEach(task => {
+        const clone = template.content.cloneNode(true);
+        const priorityDot = clone.querySelector('.task-priority');
+        priorityDot.classList.add('priority-' + task.priority);
+        clone.querySelector('.task-name').textContent = task.name;
+        clone.querySelector('.task-assignee').textContent = task.assignee;
+        container.appendChild(clone);
+      });
+
+      showNotification(tasks.length + '件のタスクを読み込みました');
+    }
+
+    function clearTasks() {
+      const container = document.getElementById('task-container');
+      container.innerHTML = '<p style="color: #999; font-style: italic;">「タスクを読み込む」ボタンを押してください</p>';
+    }
+
+    // ========================================
+    // output 要素のコスト計算
+    // ========================================
+    function updateCostCalculation() {
+      const hours = parseInt(document.getElementById('hours').value) || 0;
+      const rate = parseInt(document.getElementById('rate').value) || 0;
+      const members = parseInt(document.getElementById('members').value) || 1;
+
+      document.getElementById('members-display').value = members;
+
+      const monthly = hours * rate * members;
+      const yearly = monthly * 12;
+
+      document.getElementById('monthly-cost').value = monthly.toLocaleString();
+      document.getElementById('yearly-cost').value = yearly.toLocaleString();
+    }
+
+    // ========================================
+    // dialog の制御
+    // ========================================
+    function openConfirmDialog() {
+      const dialog = document.getElementById('confirm-dialog');
+      dialog.showModal();
+      dialog.addEventListener('close', function handler() {
+        document.getElementById('dialog-result').textContent =
+          '確認ダイアログの結果: ' + dialog.returnValue;
+        if (dialog.returnValue === 'confirm') {
+          showNotification('ステータスを「レビュー中」に変更しました');
+        }
+        dialog.removeEventListener('close', handler);
+      });
+    }
+
+    function openFormDialog() {
+      const dialog = document.getElementById('form-dialog');
+      dialog.showModal();
+      dialog.addEventListener('close', function handler() {
+        if (dialog.returnValue === 'add') {
+          const taskName = document.getElementById('task-name').value;
+          if (taskName) {
+            showNotification('タスク「' + taskName + '」を追加しました');
+            document.getElementById('dialog-result').textContent =
+              'フォームダイアログの結果: タスク「' + taskName + '」を追加';
+          }
+          document.getElementById('task-name').value = '';
+        } else {
+          document.getElementById('dialog-result').textContent =
+            'フォームダイアログの結果: キャンセル';
+        }
+        dialog.removeEventListener('close', handler);
+      });
+    }
+
+    function openDeleteDialog() {
+      const dialog = document.getElementById('delete-dialog');
+      dialog.showModal();
+      dialog.addEventListener('close', function handler() {
+        document.getElementById('dialog-result').textContent =
+          '削除ダイアログの結果: ' + dialog.returnValue;
+        if (dialog.returnValue === 'delete') {
+          showNotification('タスクを削除しました');
+        }
+        dialog.removeEventListener('close', handler);
+      });
+    }
+
+    function openSettingsDialog() {
+      const dialog = document.getElementById('settings-dialog');
+      dialog.showModal();
+      dialog.addEventListener('close', function handler() {
+        if (dialog.returnValue === 'save') {
+          showNotification('設定を保存しました');
+        }
+        dialog.removeEventListener('close', handler);
+      });
+    }
+
+    function openNewTaskDialog() {
+      openFormDialog();
+    }
+
+    // ========================================
+    // 通知の表示
+    // ========================================
+    function showNotification(message) {
+      const area = document.getElementById('notification-area');
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.textContent = message;
+      area.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // 初期計算の実行
+    updateCostCalculation();
+  </script>
+
+  <footer style="text-align: center; padding: 1em; color: #666; background: #f0f2f5;">
+    <p><small>&copy; 2024 HTML学習サンプル - プロジェクトダッシュボード</small></p>
+  </footer>
+
+</body>
+</html>

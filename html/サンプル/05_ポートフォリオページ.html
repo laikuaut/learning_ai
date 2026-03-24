@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja" prefix="og: https://ogp.me/ns#">
+<head>
+  <!--
+    ============================================================
+    サンプル05：ポートフォリオページ
+    ============================================================
+    【学べる内容】
+    - head要素内のメタ情報の総合的な設定
+    - meta description：ページの説明文（検索結果に表示される）
+    - meta robots：検索エンジンのクロール制御
+    - OGP（Open Graph Protocol）：SNSでシェアされたときの表示設定
+    - Twitter Card メタタグ
+    - link要素：ファビコン（favicon）の設定
+    - link要素：canonical URL（正規URL）の指定
+    - link要素：preconnect（先行接続）によるパフォーマンス最適化
+    - 構造化データ（JSON-LD）の埋め込み
+    - noscript要素：JavaScript無効時の代替コンテンツ
+
+    【実行方法】
+    このファイルをブラウザにドラッグ＆ドロップするか、
+    ダブルクリックで開いてください。
+    ※ OGPやファビコンの設定は、実際のWebサーバーにアップロードした時に
+      効果を発揮します。ローカルではhead要素のソースコードを確認してください。
+
+    【対応する教材】
+    第7章：メタ情報とhead
+  -->
+
+  <!-- 文字エンコーディング（headの最初に記述するのが推奨） -->
+  <meta charset="UTF-8">
+
+  <!-- レスポンシブ対応（モバイルデバイスでの表示を最適化） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ページタイトル（タブ・ブックマーク・検索結果に表示される） -->
+  <title>田中太郎 ポートフォリオ | Webエンジニア</title>
+
+  <!--
+    meta description：ページの説明文
+    検索結果のスニペット（説明文）に表示されます。
+    50〜160文字程度が目安です。
+  -->
+  <meta name="description" content="Webエンジニア田中太郎のポートフォリオサイトです。HTML, CSS, JavaScript, Reactを使ったWebサイト制作の実績をご紹介しています。">
+
+  <!--
+    meta robots：検索エンジンのクロール指示
+    index: ページをインデックスに登録する
+    follow: ページ内のリンクをたどる
+    ※ 通常はデフォルト動作と同じなので省略可能ですが、学習のために記述しています
+  -->
+  <meta name="robots" content="index, follow">
+
+  <!-- ページの著者 -->
+  <meta name="author" content="田中太郎">
+
+  <!-- テーマカラー（モバイルブラウザのアドレスバーの色） -->
+  <meta name="theme-color" content="#1a237e">
+
+  <!--
+    ================================================================
+    OGP（Open Graph Protocol）：SNSでシェアされたときの表示設定
+    Facebook, LINE, Slackなどで使われます。
+    ================================================================
+  -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="田中太郎 ポートフォリオ | Webエンジニア">
+  <meta property="og:description" content="Webエンジニア田中太郎のポートフォリオサイトです。Web制作の実績をご紹介しています。">
+  <meta property="og:url" content="https://tanaka-portfolio.example.com/">
+  <meta property="og:image" content="https://tanaka-portfolio.example.com/images/ogp.png">
+  <meta property="og:site_name" content="Tanaka Portfolio">
+  <meta property="og:locale" content="ja_JP">
+
+  <!--
+    Twitter Card メタタグ
+    Twitter（X）でシェアされたときの表示設定です。
+    summary_large_image: 大きな画像付きカード
+  -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="田中太郎 ポートフォリオ">
+  <meta name="twitter:description" content="Webエンジニア田中太郎のポートフォリオサイトです。">
+  <meta name="twitter:image" content="https://tanaka-portfolio.example.com/images/ogp.png">
+
+  <!--
+    canonical URL：正規URLの指定
+    同じ内容のページが複数のURLでアクセスできる場合に、
+    検索エンジンに「このURLが正式なもの」と伝えます。
+    SEOの重複コンテンツ対策に重要です。
+  -->
+  <link rel="canonical" href="https://tanaka-portfolio.example.com/">
+
+  <!--
+    ファビコン（favicon）：ブラウザのタブに表示される小さなアイコン
+    複数のサイズを指定するのが現代的なやり方です。
+    ※ 実際のファイルは存在しないため、表示されません。
+  -->
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!--
+    preconnect：先行接続
+    外部ドメインへの接続を事前に確立し、リソース読み込みを高速化します。
+    Google Fontsなどの外部リソースを使う場合に効果的です。
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!--
+    構造化データ（JSON-LD）
+    検索エンジンがページの内容を構造化して理解するためのデータです。
+    Googleの検索結果でリッチスニペット（拡張表示）が表示される可能性があります。
+  -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "mainEntity": {
+      "@type": "Person",
+      "name": "田中太郎",
+      "alternateName": "Taro Tanaka",
+      "jobTitle": "Webエンジニア",
+      "url": "https://tanaka-portfolio.example.com/",
+      "email": "tanaka@example.com",
+      "sameAs": [
+        "https://github.com/tanaka-taro",
+        "https://twitter.com/tanaka_taro"
+      ],
+      "knowsAbout": ["HTML", "CSS", "JavaScript", "React", "Node.js"]
+    }
+  }
+  </script>
+
+  <!--
+    noscript要素：JavaScript無効時の代替コンテンツ
+    headの中ではlinkやstyle等の要素のみ配置できます。
+  -->
+  <noscript>
+    <style>
+      .js-only { display: none !important; }
+    </style>
+  </noscript>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      line-height: 1.8;
+      color: #333;
+    }
+
+    /* ヒーローセクション */
+    .hero {
+      background: linear-gradient(135deg, #1a237e, #3949ab);
+      color: #fff;
+      text-align: center;
+      padding: 4em 1em;
+    }
+    .hero h1 { font-size: 2em; margin-bottom: 0.3em; }
+    .hero p { font-size: 1.2em; opacity: 0.9; }
+
+    /* メインコンテンツ */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2em 1em;
+    }
+    section {
+      margin-bottom: 3em;
+    }
+    h2 {
+      color: #1a237e;
+      font-size: 1.5em;
+      border-bottom: 3px solid #1a237e;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+
+    /* スキルバー */
+    .skill-item {
+      margin-bottom: 1em;
+    }
+    .skill-name {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.3em;
+      font-weight: bold;
+    }
+    .skill-bar {
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .skill-fill {
+      height: 100%;
+      background: #3949ab;
+      border-radius: 4px;
+    }
+
+    /* プロジェクトカード */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5em;
+    }
+    .project-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .project-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .project-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+      background: #e0e0e0;
+    }
+    .project-info {
+      padding: 1em;
+    }
+    .project-info h3 { color: #1a237e; margin-bottom: 0.3em; }
+    .tech-tags {
+      list-style: none;
+      display: flex;
+      gap: 0.3em;
+      flex-wrap: wrap;
+      margin-top: 0.5em;
+    }
+    .tech-tags li {
+      background: #e8eaf6;
+      color: #1a237e;
+      padding: 0.15em 0.6em;
+      border-radius: 12px;
+      font-size: 0.8em;
+    }
+
+    /* 経歴タイムライン */
+    .timeline {
+      border-left: 3px solid #1a237e;
+      padding-left: 2em;
+    }
+    .timeline-item {
+      margin-bottom: 1.5em;
+      position: relative;
+    }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -2.45em;
+      top: 0.4em;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #1a237e;
+    }
+    .timeline-date {
+      font-weight: bold;
+      color: #1a237e;
+    }
+
+    /* メタ情報パネル */
+    .meta-info-panel {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1.5em;
+    }
+    .meta-info-panel h3 {
+      margin-bottom: 0.8em;
+      color: #1a237e;
+    }
+    .meta-info-panel code {
+      display: block;
+      background: #fff;
+      padding: 0.8em;
+      margin: 0.3em 0;
+      border-radius: 4px;
+      font-size: 0.85em;
+      overflow-x: auto;
+      border: 1px solid #e0e0e0;
+    }
+
+    /* フッター */
+    footer {
+      background: #1a237e;
+      color: #fff;
+      text-align: center;
+      padding: 2em 1em;
+    }
+    footer a { color: #90caf9; }
+  </style>
+</head>
+<body>
+
+  <!-- ヒーローセクション -->
+  <header class="hero">
+    <h1>田中 太郎</h1>
+    <p>Webエンジニア / フロントエンド開発者</p>
+    <p style="margin-top: 1em; opacity: 0.8;">
+      HTML, CSS, JavaScript, Reactを使ったWeb開発をしています
+    </p>
+  </header>
+
+  <main>
+
+    <!-- 自己紹介 -->
+    <section>
+      <h2>About Me</h2>
+      <p>
+        はじめまして、田中太郎と申します。
+        フロントエンド開発を中心に、ユーザー体験を大切にしたWebサイト・
+        Webアプリケーションの制作を行っています。
+        モダンな技術スタックを活用し、アクセシブルでパフォーマンスの高い
+        プロダクトの構築を目指しています。
+      </p>
+    </section>
+
+    <!-- スキル -->
+    <section>
+      <h2>Skills</h2>
+      <div class="skill-item">
+        <div class="skill-name"><span>HTML5 / CSS3</span><span>90%</span></div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 90%;"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-name"><span>JavaScript / TypeScript</span><span>85%</span></div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 85%;"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-name"><span>React</span><span>80%</span></div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 80%;"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-name"><span>Node.js</span><span>70%</span></div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 70%;"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-name"><span>Python</span><span>60%</span></div>
+        <div class="skill-bar"><div class="skill-fill" style="width: 60%;"></div></div>
+      </div>
+    </section>
+
+    <!-- 制作実績 -->
+    <section>
+      <h2>Projects</h2>
+      <div class="projects-grid">
+        <article class="project-card">
+          <img src="https://via.placeholder.com/400x200/3949ab/ffffff?text=EC+Site"
+               alt="ECサイトのスクリーンショット" class="project-img">
+          <div class="project-info">
+            <h3>オンラインショップ</h3>
+            <p>レスポンシブ対応のECサイト。商品検索・カート・決済機能を実装しました。</p>
+            <ul class="tech-tags">
+              <li>React</li>
+              <li>TypeScript</li>
+              <li>Node.js</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <img src="https://via.placeholder.com/400x200/1a237e/ffffff?text=Dashboard"
+               alt="ダッシュボードのスクリーンショット" class="project-img">
+          <div class="project-info">
+            <h3>管理ダッシュボード</h3>
+            <p>データ可視化ダッシュボード。リアルタイムのグラフ表示と分析機能を搭載しています。</p>
+            <ul class="tech-tags">
+              <li>React</li>
+              <li>D3.js</li>
+              <li>REST API</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <img src="https://via.placeholder.com/400x200/283593/ffffff?text=Blog"
+               alt="ブログサイトのスクリーンショット" class="project-img">
+          <div class="project-info">
+            <h3>技術ブログ</h3>
+            <p>Markdownベースの技術ブログ。SSGによる高速表示とSEO最適化を行いました。</p>
+            <ul class="tech-tags">
+              <li>Next.js</li>
+              <li>MDX</li>
+              <li>Vercel</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 経歴 -->
+    <section>
+      <h2>Career</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <p class="timeline-date">
+            <time datetime="2020">2020年</time> 〜 現在
+          </p>
+          <p><strong>株式会社テックカンパニー</strong> — フロントエンドエンジニア</p>
+          <p>ECサイトのUI開発、パフォーマンス改善を担当</p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-date">
+            <time datetime="2016">2016年</time> 〜
+            <time datetime="2020">2020年</time>
+          </p>
+          <p><strong>フリーランス</strong> — Webデザイナー / エンジニア</p>
+          <p>コーポレートサイト、LP制作を中心に活動</p>
+        </div>
+        <div class="timeline-item">
+          <p class="timeline-date">
+            <time datetime="2012">2012年</time> 〜
+            <time datetime="2016">2016年</time>
+          </p>
+          <p><strong>○○大学 情報工学部</strong> 卒業</p>
+          <p>コンピュータサイエンスの基礎を習得</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- このページのhead要素の解説 -->
+    <section>
+      <h2>このページの head 要素の解説</h2>
+      <p>
+        このサンプルでは、実務で使われる主要なメタ情報をすべて含めています。
+        ブラウザの開発者ツール（F12）でソースコードを確認し、
+        各メタタグの役割を理解しましょう。
+      </p>
+
+      <div class="meta-info-panel">
+        <h3>基本メタ情報</h3>
+        <code>&lt;meta charset="UTF-8"&gt;</code>
+        <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code>
+        <code>&lt;meta name="description" content="ページの説明文..."&gt;</code>
+        <code>&lt;meta name="robots" content="index, follow"&gt;</code>
+        <code>&lt;meta name="author" content="田中太郎"&gt;</code>
+        <code>&lt;meta name="theme-color" content="#1a237e"&gt;</code>
+      </div>
+
+      <div class="meta-info-panel" style="margin-top: 1em;">
+        <h3>OGP（Open Graph Protocol）</h3>
+        <p>SNSでシェアされたときにタイトル・説明文・画像が正しく表示されるようにする設定です。</p>
+        <code>&lt;meta property="og:type" content="website"&gt;</code>
+        <code>&lt;meta property="og:title" content="ページタイトル"&gt;</code>
+        <code>&lt;meta property="og:description" content="説明文"&gt;</code>
+        <code>&lt;meta property="og:image" content="画像のURL"&gt;</code>
+      </div>
+
+      <div class="meta-info-panel" style="margin-top: 1em;">
+        <h3>構造化データ（JSON-LD）</h3>
+        <p>検索エンジンがページの内容をより正確に理解するためのデータです。
+           Google検索でリッチスニペット（拡張表示）が表示される可能性があります。</p>
+        <code>&lt;script type="application/ld+json"&gt;{ "@context": "https://schema.org", "@type": "ProfilePage", ... }&lt;/script&gt;</code>
+      </div>
+
+      <div class="meta-info-panel" style="margin-top: 1em;">
+        <h3>パフォーマンス最適化</h3>
+        <code>&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;</code>
+        <code>&lt;link rel="canonical" href="https://..."&gt;</code>
+      </div>
+    </section>
+
+    <!-- JavaScript無効時の代替表示 -->
+    <noscript>
+      <section>
+        <h2>お知らせ</h2>
+        <p>
+          このページの一部の機能にはJavaScriptが必要です。
+          JavaScriptを有効にして再度アクセスしてください。
+        </p>
+      </section>
+    </noscript>
+
+  </main>
+
+  <footer>
+    <p>田中太郎 ポートフォリオ</p>
+    <p>
+      <a href="mailto:tanaka@example.com">tanaka@example.com</a> |
+      <a href="https://github.com/" target="_blank" rel="noopener noreferrer">GitHub</a> |
+      <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer">Twitter</a>
+    </p>
+    <p><small>&copy; 2024 Taro Tanaka. All rights reserved.</small></p>
+  </footer>
+
+</body>
+</html>

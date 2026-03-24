@@ -2,26 +2,28 @@
 
 ## 概要
 初心者向けプログラミング学習教材。各技術分野をフォルダごとに整理し、教材・演習問題・動作サンプルを提供する。
+全15分野・351ファイルで構成（教材125、演習125、サンプル101）。
 
 ## ディレクトリ構造
 ```
 learning/
+├── README.md
 ├── CLAUDE.md
-├── python/           # Python基礎〜応用
-├── javascript/       # JavaScript基礎〜応用
-├── typescript/       # TypeScript
-├── html/             # HTML
-├── css/              # CSS
-├── react/            # React
-├── vue/              # Vue.js
-├── nextjs/           # Next.js
-├── linux/            # Linux基礎
-├── network/          # ネットワーク基礎
-├── security/         # 情報セキュリティ
-├── project-management/ # プロジェクトマネジメント
-├── prompt-engineering/ # プロンプトエンジニアリング
-├── 基本情報技術者/      # 基本情報技術者試験対策
-└── 応用情報技術者/      # 応用情報技術者試験対策
+├── python/              # Python基礎〜応用（11章）
+├── javascript/          # JavaScript基礎〜応用（13章）
+├── typescript/          # TypeScript（9章）
+├── html/                # HTML（8章）
+├── css/                 # CSS（8章）
+├── react/               # React（10章）
+├── vue/                 # Vue.js（10章）
+├── nextjs/              # Next.js（7章）
+├── linux/               # Linux基礎（8章）
+├── network/             # ネットワーク基礎（8章）
+├── security/            # 情報セキュリティ（8章）
+├── project-management/  # プロジェクトマネジメント（8章）
+├── prompt-engineering/  # プロンプトエンジニアリング（8章）
+├── 基本情報技術者/       # 基本情報技術者試験対策（10章）
+└── 応用情報技術者/       # 応用情報技術者試験対策（10章）
 ```
 
 ## 各フォルダの構成
@@ -31,6 +33,26 @@ learning/
 ├── 演習/           # 演習問題（XX_トピック名_演習.md）
 └── サンプル/       # 動作するコードサンプル（XX_サンプル名.拡張子）
 ```
+
+## 各トピックのファイル数
+| トピック | 教材 | 演習 | サンプル | 計 |
+|---|:---:|:---:|:---:|:---:|
+| python | 11 | 11 | 11 (.py) | 33 |
+| javascript | 13 | 13 | 7 (.html) | 33 |
+| typescript | 9 | 9 | 5 (.ts) | 23 |
+| html | 8 | 8 | 8 (.html) | 24 |
+| css | 8 | 8 | 8 (.html) | 24 |
+| react | 10 | 10 | 5 (.html) | 25 |
+| vue | 10 | 10 | 5 (.html) | 25 |
+| nextjs | 7 | 7 | 5 (.tsx) | 19 |
+| linux | 8 | 8 | 5 (.sh) | 21 |
+| network | 8 | 8 | 5 (.py) | 21 |
+| security | 8 | 8 | 5 (.py) | 21 |
+| project-management | 8 | 8 | - | 16 |
+| prompt-engineering | 8 | 8 | - | 16 |
+| 基本情報技術者 | 10 | 10 | 5 (.py) | 25 |
+| 応用情報技術者 | 10 | 10 | 5 (.py) | 25 |
+| **合計** | **125** | **125** | **101** | **351** |
 
 ## 教材作成ルール
 

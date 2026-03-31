@@ -1,0 +1,181 @@
+<!--
+  学べる内容:
+    - AngularJSでの実用的なTODOアプリの構築
+    - ng-model / ng-click / ng-repeat の組み合わせ
+    - フィルター機能（全件・未完了・完了済み）
+    - タスクの追加・完了切替・削除
+    - LocalStorageによるデータ永続化
+    - ng-class による動的スタイル適用
+  実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    インターネット接続が必要です（CDNからAngularJSを読み込みます）。
+-->
+<!DOCTYPE html>
+<html lang="ja" ng-app="todoApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TODOアプリ - AngularJS</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { color: #fff; text-align: center; margin-bottom: 8px; font-size: 2em; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .subtitle { color: rgba(255,255,255,0.9); text-align: center; margin-bottom: 28px; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+    .input-area { display: flex; gap: 10px; margin-bottom: 20px; }
+    .input-area input { flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1em; transition: border-color 0.3s; }
+    .input-area input:focus { outline: none; border-color: #f5576c; }
+    button { padding: 10px 18px; border: none; border-radius: 10px; font-size: 0.95em; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+    button:hover { transform: translateY(-1px); }
+    .btn-add { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; padding: 12px 24px; }
+    .btn-add:hover { box-shadow: 0 4px 12px rgba(245,87,108,0.4); }
+    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-delete { background: none; color: #e53e3e; font-size: 1.2em; padding: 4px 10px; }
+    .btn-delete:hover { background: #fff5f5; border-radius: 50%; }
+    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters button { background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; padding: 8px 16px; }
+    .filters button.active { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; border-color: transparent; }
+    .stats { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f7fafc; border-radius: 10px; margin-bottom: 16px; font-size: 0.95em; color: #4a5568; }
+    .stats strong { color: #f5576c; }
+    .btn-clear { background: none; color: #a0aec0; font-size: 0.85em; cursor: pointer; border: 1px solid #e2e8f0; padding: 6px 12px; }
+    .btn-clear:hover { color: #e53e3e; border-color: #e53e3e; }
+    .todo-list { list-style: none; }
+    .todo-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; gap: 12px; }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item:hover { background: #fafafa; }
+    .todo-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: #f5576c; cursor: pointer; flex-shrink: 0; }
+    .todo-item .text { flex: 1; font-size: 1.05em; transition: all 0.3s; }
+    .todo-item .text.completed { text-decoration: line-through; color: #a0aec0; }
+    .todo-item .date { font-size: 0.8em; color: #a0aec0; flex-shrink: 0; }
+    .empty-state { text-align: center; padding: 40px; color: #a0aec0; }
+    .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+  </style>
+</head>
+<body ng-controller="TodoCtrl">
+  <div class="container">
+    <h1>TODOアプリ</h1>
+    <p class="subtitle">AngularJSで作るタスク管理アプリケーション</p>
+
+    <div class="card">
+      <!-- 入力エリア -->
+      <div class="input-area">
+        <input type="text" ng-model="newTask" placeholder="新しいタスクを入力..." ng-keypress="$event.keyCode === 13 && addTask()">
+        <button class="btn-add" ng-click="addTask()" ng-disabled="!newTask.trim()">追加</button>
+      </div>
+
+      <!-- 統計 -->
+      <div class="stats" ng-show="todos.length > 0">
+        <span>全 <strong>{{ todos.length }}</strong> 件 / 残り <strong>{{ remaining() }}</strong> 件</span>
+        <button class="btn-clear" ng-click="clearCompleted()" ng-show="todos.length - remaining() > 0">
+          完了済みを削除 ({{ todos.length - remaining() }}件)
+        </button>
+      </div>
+
+      <!-- フィルター -->
+      <div class="filters" ng-show="todos.length > 0">
+        <button ng-class="{active: filter === 'all'}" ng-click="filter = 'all'">すべて</button>
+        <button ng-class="{active: filter === 'active'}" ng-click="filter = 'active'">未完了</button>
+        <button ng-class="{active: filter === 'completed'}" ng-click="filter = 'completed'">完了済み</button>
+      </div>
+
+      <!-- TODOリスト -->
+      <ul class="todo-list" ng-show="filteredTodos().length > 0">
+        <li class="todo-item" ng-repeat="todo in filteredTodos() track by todo.id">
+          <input type="checkbox" ng-model="todo.completed" ng-change="save()">
+          <span class="text" ng-class="{completed: todo.completed}">{{ todo.text }}</span>
+          <span class="date">{{ todo.createdAt }}</span>
+          <button class="btn-delete" ng-click="removeTodo(todo)" title="削除">&times;</button>
+        </li>
+      </ul>
+
+      <!-- 空の状態 -->
+      <div class="empty-state" ng-show="todos.length === 0">
+        <div class="icon">&#128221;</div>
+        <p>タスクがありません。<br>上のフォームから新しいタスクを追加しましょう！</p>
+      </div>
+      <div class="empty-state" ng-show="todos.length > 0 && filteredTodos().length === 0">
+        <p>該当するタスクがありません。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    angular.module('todoApp', [])
+      .controller('TodoCtrl', function($scope) {
+        var STORAGE_KEY = 'angularjs-todos';
+
+        // LocalStorageから読み込み
+        function loadTodos() {
+          try {
+            var data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        $scope.todos = loadTodos();
+        $scope.newTask = '';
+        $scope.filter = 'all';
+        var nextId = $scope.todos.length > 0
+          ? Math.max.apply(null, $scope.todos.map(function(t) { return t.id; })) + 1
+          : 1;
+
+        // 保存
+        $scope.save = function() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify($scope.todos));
+        };
+
+        // タスク追加
+        $scope.addTask = function() {
+          var text = $scope.newTask.trim();
+          if (!text) return;
+          var now = new Date();
+          var dateStr = now.getFullYear() + '/' +
+            ('0' + (now.getMonth() + 1)).slice(-2) + '/' +
+            ('0' + now.getDate()).slice(-2);
+          $scope.todos.push({
+            id: nextId++,
+            text: text,
+            completed: false,
+            createdAt: dateStr
+          });
+          $scope.newTask = '';
+          $scope.save();
+        };
+
+        // タスク削除
+        $scope.removeTodo = function(todo) {
+          var idx = $scope.todos.indexOf(todo);
+          if (idx > -1) {
+            $scope.todos.splice(idx, 1);
+            $scope.save();
+          }
+        };
+
+        // 残りタスク数
+        $scope.remaining = function() {
+          return $scope.todos.filter(function(t) { return !t.completed; }).length;
+        };
+
+        // フィルター済みリスト
+        $scope.filteredTodos = function() {
+          if ($scope.filter === 'active') {
+            return $scope.todos.filter(function(t) { return !t.completed; });
+          } else if ($scope.filter === 'completed') {
+            return $scope.todos.filter(function(t) { return t.completed; });
+          }
+          return $scope.todos;
+        };
+
+        // 完了済み削除
+        $scope.clearCompleted = function() {
+          $scope.todos = $scope.todos.filter(function(t) { return !t.completed; });
+          $scope.save();
+        };
+      });
+  </script>
+</body>
+</html>

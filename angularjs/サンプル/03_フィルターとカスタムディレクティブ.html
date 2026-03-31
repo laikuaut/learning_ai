@@ -1,0 +1,202 @@
+<!--
+  学べる内容:
+    - AngularJSの組み込みフィルター（currency, date, orderBy, filter）
+    - カスタムフィルターの作成（テキスト省略フィルター）
+    - カスタムディレクティブの作成（折りたたみパネル）
+    - 商品リストの検索・ソート・フィルタリング
+  実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    インターネット接続が必要です（CDNからAngularJSを読み込みます）。
+-->
+<!DOCTYPE html>
+<html lang="ja" ng-app="filterApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フィルターとカスタムディレクティブ - AngularJS</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #fff; text-align: center; margin-bottom: 8px; font-size: 2em; text-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .subtitle { color: rgba(255,255,255,0.9); text-align: center; margin-bottom: 28px; }
+    .card { background: #fff; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .card h2 { color: #2f855a; margin-bottom: 14px; font-size: 1.25em; border-bottom: 2px solid #c6f6d5; padding-bottom: 8px; }
+    .card h2 .badge { background: #38a169; color: #fff; font-size: 0.6em; padding: 3px 10px; border-radius: 12px; margin-left: 8px; vertical-align: middle; }
+    .search-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-bar input, .search-bar select { padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95em; }
+    .search-bar input:focus, .search-bar select:focus { outline: none; border-color: #38a169; }
+    .search-bar input { flex: 1; min-width: 200px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th { background: #f0fff4; color: #2f855a; padding: 12px; text-align: left; cursor: pointer; user-select: none; font-size: 0.95em; }
+    th:hover { background: #c6f6d5; }
+    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
+    tr:hover td { background: #fafafa; }
+    .price { font-weight: 600; color: #2f855a; }
+    .category-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .cat-food { background: #fefcbf; color: #975a16; }
+    .cat-electronics { background: #bee3f8; color: #2a4365; }
+    .cat-clothing { background: #fed7e2; color: #97266d; }
+    .cat-books { background: #e9d8fd; color: #553c9a; }
+    .stock-low { color: #e53e3e; font-weight: 600; }
+    .collapsible-header { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #fff; padding: 14px 18px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 4px; transition: border-radius 0.3s; }
+    .collapsible-header:hover { opacity: 0.9; }
+    .collapsible-header.open { border-radius: 10px 10px 0 0; }
+    .collapsible-body { background: #f7fafc; padding: 16px 18px; border-radius: 0 0 10px 10px; border: 1px solid #e2e8f0; border-top: none; margin-bottom: 12px; }
+    .arrow { transition: transform 0.3s; display: inline-block; }
+    .arrow.open { transform: rotate(90deg); }
+    .demo-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+    .demo-box { flex: 1; min-width: 200px; background: #f0fff4; padding: 14px; border-radius: 8px; border-left: 4px solid #38a169; }
+    .demo-box .label { font-size: 0.8em; color: #718096; margin-bottom: 4px; }
+    .demo-box .value { font-size: 1.15em; color: #2d3748; font-weight: 600; }
+    .desc-text { color: #718096; font-size: 0.9em; }
+  </style>
+</head>
+<body ng-controller="MainCtrl">
+  <div class="container">
+    <h1>フィルターとカスタムディレクティブ</h1>
+    <p class="subtitle">AngularJSの強力なフィルター機能とディレクティブを体験しましょう</p>
+
+    <!-- 組み込みフィルターのデモ -->
+    <div class="card">
+      <h2>組み込みフィルター <span class="badge">filter | currency | date</span></h2>
+      <div class="demo-row">
+        <div class="demo-box">
+          <div class="label">currency フィルター</div>
+          <div class="value">{{ 29800 | currency:'&yen;':0 }}</div>
+        </div>
+        <div class="demo-box">
+          <div class="label">date フィルター</div>
+          <div class="value">{{ today | date:'yyyy年MM月dd日' }}</div>
+        </div>
+        <div class="demo-box">
+          <div class="label">uppercase フィルター</div>
+          <div class="value">{{ 'angularjs' | uppercase }}</div>
+        </div>
+        <div class="demo-box">
+          <div class="label">カスタム truncate フィルター</div>
+          <div class="value">{{ 'AngularJSのフィルターは非常に強力です' | truncate:12 }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- カスタムディレクティブ：折りたたみパネル -->
+    <div class="card">
+      <h2>カスタムディレクティブ <span class="badge">collapsible-panel</span></h2>
+      <p class="desc-text" style="margin-bottom: 14px;">クリックで開閉する再利用可能なパネルコンポーネントです。</p>
+
+      <collapsible-panel panel-title="AngularJSのフィルターとは？">
+        <p>フィルターはテンプレート内でデータを整形する仕組みです。パイプ（|）記号を使って式に適用します。</p>
+        <p style="margin-top:8px;"><code>{{ expression | filterName:arg1:arg2 }}</code></p>
+      </collapsible-panel>
+
+      <collapsible-panel panel-title="カスタムディレクティブとは？">
+        <p>ディレクティブはHTMLを拡張する仕組みです。独自のHTML要素や属性を定義できます。</p>
+        <p style="margin-top:8px;">要素（E）、属性（A）、クラス（C）、コメント（M）として使用できます。</p>
+      </collapsible-panel>
+
+      <collapsible-panel panel-title="このサンプルのソースコード解説">
+        <p><strong>truncate フィルター:</strong> 長いテキストを指定文字数で切り詰めて「...」を追加します。</p>
+        <p style="margin-top:8px;"><strong>collapsible-panel ディレクティブ:</strong> transclude を使って、パネル内のコンテンツを自由に埋め込めるようにしています。</p>
+      </collapsible-panel>
+    </div>
+
+    <!-- 商品リスト（検索・ソート・フィルター） -->
+    <div class="card">
+      <h2>商品リスト <span class="badge">検索・ソート・フィルター</span></h2>
+      <div class="search-bar">
+        <input type="text" ng-model="searchQuery" placeholder="商品名で検索...">
+        <select ng-model="categoryFilter">
+          <option value="">全カテゴリー</option>
+          <option value="食品">食品</option>
+          <option value="家電">家電</option>
+          <option value="衣類">衣類</option>
+          <option value="書籍">書籍</option>
+        </select>
+        <select ng-model="sortField">
+          <option value="name">名前順</option>
+          <option value="price">価格順</option>
+          <option value="stock">在庫順</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th ng-click="sortField='name'; sortReverse=!sortReverse">商品名 {{ sortField === 'name' ? (sortReverse ? '&#9660;' : '&#9650;') : '' }}</th>
+            <th ng-click="sortField='category'; sortReverse=!sortReverse">カテゴリー</th>
+            <th ng-click="sortField='price'; sortReverse=!sortReverse">価格 {{ sortField === 'price' ? (sortReverse ? '&#9660;' : '&#9650;') : '' }}</th>
+            <th ng-click="sortField='stock'; sortReverse=!sortReverse">在庫 {{ sortField === 'stock' ? (sortReverse ? '&#9660;' : '&#9650;') : '' }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="p in products | filter:{name: searchQuery, category: categoryFilter} | orderBy:sortField:sortReverse">
+            <td><strong>{{ p.name }}</strong><br><span class="desc-text">{{ p.description | truncate:20 }}</span></td>
+            <td><span class="category-tag" ng-class="{'cat-food': p.category==='食品', 'cat-electronics': p.category==='家電', 'cat-clothing': p.category==='衣類', 'cat-books': p.category==='書籍'}">{{ p.category }}</span></td>
+            <td class="price">{{ p.price | currency:'&yen;':0 }}</td>
+            <td ng-class="{'stock-low': p.stock < 5}">{{ p.stock }}個 {{ p.stock < 5 ? '(残りわずか)' : '' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    angular.module('filterApp', [])
+
+      // カスタムフィルター: テキストを指定文字数で省略
+      .filter('truncate', function() {
+        return function(text, length) {
+          if (!text) return '';
+          length = length || 20;
+          if (text.length <= length) return text;
+          return text.substring(0, length) + '...';
+        };
+      })
+
+      // カスタムディレクティブ: 折りたたみパネル
+      .directive('collapsiblePanel', function() {
+        return {
+          restrict: 'E',
+          transclude: true,
+          scope: { panelTitle: '@' },
+          template:
+            '<div>' +
+            '  <div class="collapsible-header" ng-class="{open: isOpen}" ng-click="toggle()">' +
+            '    <span>{{ panelTitle }}</span>' +
+            '    <span class="arrow" ng-class="{open: isOpen}">&#9654;</span>' +
+            '  </div>' +
+            '  <div class="collapsible-body" ng-show="isOpen" ng-transclude></div>' +
+            '</div>',
+          link: function(scope) {
+            scope.isOpen = false;
+            scope.toggle = function() {
+              scope.isOpen = !scope.isOpen;
+            };
+          }
+        };
+      })
+
+      .controller('MainCtrl', function($scope) {
+        $scope.today = new Date();
+        $scope.sortField = 'name';
+        $scope.sortReverse = false;
+        $scope.searchQuery = '';
+        $scope.categoryFilter = '';
+
+        $scope.products = [
+          { name: '有機緑茶', category: '食品', price: 980, stock: 25, description: '静岡産の厳選された有機栽培の緑茶です' },
+          { name: 'ワイヤレスイヤホン', category: '家電', price: 12800, stock: 8, description: 'ノイズキャンセリング対応の高音質イヤホン' },
+          { name: 'コットンTシャツ', category: '衣類', price: 3200, stock: 42, description: 'オーガニックコットン100%の快適なTシャツ' },
+          { name: 'JavaScript入門', category: '書籍', price: 2800, stock: 15, description: '初心者から始めるJavaScriptプログラミング' },
+          { name: '天然はちみつ', category: '食品', price: 1500, stock: 3, description: '国産アカシア花から採取した純粋はちみつ' },
+          { name: 'スマートウォッチ', category: '家電', price: 29800, stock: 2, description: '心拍数・睡眠トラッキング搭載のスマートウォッチ' },
+          { name: 'デニムジャケット', category: '衣類', price: 8900, stock: 18, description: 'ヴィンテージ加工のカジュアルデニムジャケット' },
+          { name: 'AngularJS実践ガイド', category: '書籍', price: 3500, stock: 7, description: 'AngularJSでWebアプリケーションを構築する実践書' },
+          { name: '抹茶パウダー', category: '食品', price: 1200, stock: 30, description: '京都宇治産の石臼挽き高級抹茶パウダー' },
+          { name: 'USBハブ', category: '家電', price: 2480, stock: 50, description: 'USB-C対応4ポートハブ、データ転送対応' }
+        ];
+      });
+  </script>
+</body>
+</html>

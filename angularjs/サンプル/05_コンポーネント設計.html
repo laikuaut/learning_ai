@@ -1,0 +1,269 @@
+<!--
+  学べる内容:
+    - AngularJS 1.5+ の .component() API
+    - 親子コンポーネント間の通信（バインディング）
+    - 一方向バインディング（<）とコールバック（&）
+    - ライフサイクルフック（$onInit, $onChanges）
+    - 実用的なコンポーネント分割（ヘッダー、サイドバー、商品カード）
+  実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    インターネット接続が必要です（CDNからAngularJSを読み込みます）。
+-->
+<!DOCTYPE html>
+<html lang="ja" ng-app="componentApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コンポーネント設計 - AngularJS</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+    /* ヘッダー */
+    .app-header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .app-header h1 { font-size: 1.4em; }
+    .cart-badge { background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 0.95em; }
+    .cart-badge strong { color: #fbbf24; }
+
+    /* レイアウト */
+    .app-layout { display: flex; min-height: calc(100vh - 60px); }
+
+    /* サイドバー */
+    .app-sidebar { width: 220px; background: #fff; padding: 20px; border-right: 1px solid #e5e7eb; flex-shrink: 0; }
+    .sidebar-title { font-size: 0.85em; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .category-list { list-style: none; }
+    .category-list li { padding: 10px 14px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: all 0.2s; font-size: 0.95em; color: #374151; }
+    .category-list li:hover { background: #f3f4f6; }
+    .category-list li.active { background: #ede9fe; color: #6366f1; font-weight: 600; }
+    .category-count { float: right; background: #e5e7eb; color: #6b7280; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; }
+    .category-list li.active .category-count { background: #c4b5fd; color: #6366f1; }
+
+    /* メインコンテンツ */
+    .app-main { flex: 1; padding: 24px; }
+    .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .main-header h2 { color: #1f2937; font-size: 1.3em; }
+    .sort-select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9em; }
+
+    /* 商品グリッド */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+
+    /* 商品カード */
+    .product-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.3s; }
+    .product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .product-image { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 3.5em; }
+    .product-body { padding: 16px; }
+    .product-category { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; color: #6366f1; font-weight: 600; margin-bottom: 4px; }
+    .product-name { font-size: 1.1em; color: #1f2937; font-weight: 600; margin-bottom: 6px; }
+    .product-desc { font-size: 0.85em; color: #9ca3af; margin-bottom: 12px; line-height: 1.4; }
+    .product-footer { display: flex; justify-content: space-between; align-items: center; }
+    .product-price { font-size: 1.2em; font-weight: 700; color: #6366f1; }
+    .btn-cart { padding: 8px 14px; border: none; border-radius: 8px; background: #6366f1; color: #fff; font-size: 0.85em; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+    .btn-cart:hover { background: #4f46e5; }
+    .btn-cart.in-cart { background: #d1d5db; color: #6b7280; }
+    .rating { color: #fbbf24; font-size: 0.9em; margin-bottom: 8px; }
+
+    /* 空状態 */
+    .empty { text-align: center; padding: 60px; color: #9ca3af; }
+    .empty .icon { font-size: 3em; margin-bottom: 12px; }
+
+    /* コンポーネントマップ */
+    .component-map { background: #fff; border-radius: 12px; padding: 20px; margin: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .component-map h3 { color: #6366f1; margin-bottom: 12px; }
+    .tree { font-family: monospace; font-size: 0.95em; color: #374151; line-height: 1.8; background: #f9fafb; padding: 16px; border-radius: 8px; }
+    .tree .comp { color: #6366f1; font-weight: bold; }
+    .tree .bind { color: #059669; }
+  </style>
+</head>
+<body>
+
+  <!-- ルートコンポーネント -->
+  <app-root></app-root>
+
+  <!-- コンポーネント構成図 -->
+  <div class="component-map">
+    <h3>コンポーネント構成図</h3>
+    <div class="tree">
+      <span class="comp">&lt;app-root&gt;</span> ── アプリ全体の状態管理（商品データ、カート）<br>
+      &ensp;&ensp;├── <span class="comp">&lt;app-header&gt;</span> <span class="bind">&lt; cartCount</span> ── カート数を一方向バインディングで受け取る<br>
+      &ensp;&ensp;├── <span class="comp">&lt;category-sidebar&gt;</span> <span class="bind">&lt; categories, &lt; selected, &amp; onSelect</span> ── カテゴリー選択をコールバックで親へ通知<br>
+      &ensp;&ensp;└── <span class="comp">&lt;product-list&gt;</span> <span class="bind">&lt; products, &amp; onAddToCart</span><br>
+      &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;└── <span class="comp">&lt;product-card&gt;</span> <span class="bind">&lt; product, &amp; onAdd</span> ── 各商品カードも独立コンポーネント
+    </div>
+  </div>
+
+  <script>
+    var app = angular.module('componentApp', []);
+
+    // ============================================
+    // ルートコンポーネント（アプリ全体）
+    // ============================================
+    app.component('appRoot', {
+      template:
+        '<div>' +
+        '  <app-header cart-count="$ctrl.cart.length"></app-header>' +
+        '  <div class="app-layout">' +
+        '    <category-sidebar categories="$ctrl.categories" selected="$ctrl.selectedCategory" on-select="$ctrl.selectCategory(cat)"></category-sidebar>' +
+        '    <product-list products="$ctrl.filteredProducts()" on-add-to-cart="$ctrl.addToCart(product)"></product-list>' +
+        '  </div>' +
+        '</div>',
+      controller: function() {
+        var ctrl = this;
+
+        ctrl.$onInit = function() {
+          ctrl.cart = [];
+          ctrl.selectedCategory = 'すべて';
+
+          ctrl.allProducts = [
+            { id: 1, name: 'ワイヤレスヘッドホン', category: 'オーディオ', price: 15800, rating: 4.5, desc: 'ノイズキャンセリング対応の高音質ヘッドホン', emoji: '&#127911;', color: '#ede9fe' },
+            { id: 2, name: 'Bluetoothスピーカー', category: 'オーディオ', price: 8900, rating: 4.2, desc: '防水仕様のポータブルスピーカー', emoji: '&#128266;', color: '#dbeafe' },
+            { id: 3, name: 'メカニカルキーボード', category: 'PC周辺機器', price: 12500, rating: 4.8, desc: '赤軸採用の静音タイピング向けキーボード', emoji: '&#9000;', color: '#fce7f3' },
+            { id: 4, name: 'ゲーミングマウス', category: 'PC周辺機器', price: 6800, rating: 4.3, desc: '16000DPI対応の高精度マウス', emoji: '&#128433;', color: '#d1fae5' },
+            { id: 5, name: 'USBマイク', category: 'オーディオ', price: 9800, rating: 4.6, desc: '配信・会議に最適なコンデンサーマイク', emoji: '&#127908;', color: '#fef3c7' },
+            { id: 6, name: '4Kモニター', category: 'PC周辺機器', price: 45000, rating: 4.7, desc: '27インチ IPS液晶 4K UHDモニター', emoji: '&#128187;', color: '#e0e7ff' },
+            { id: 7, name: 'ウェブカメラ', category: 'PC周辺機器', price: 5600, rating: 4.1, desc: 'フルHD 1080p 自動フォーカス対応', emoji: '&#128247;', color: '#ffe4e6' },
+            { id: 8, name: 'ポータブルSSD', category: 'ストレージ', price: 11200, rating: 4.4, desc: '1TB USB3.2 高速転送対応', emoji: '&#128190;', color: '#ccfbf1' },
+            { id: 9, name: 'SDカード 256GB', category: 'ストレージ', price: 3400, rating: 4.0, desc: 'UHS-I U3 V30対応 高速SDカード', emoji: '&#128190;', color: '#fef9c3' }
+          ];
+
+          // カテゴリー一覧を生成
+          var catMap = {};
+          ctrl.allProducts.forEach(function(p) {
+            catMap[p.category] = (catMap[p.category] || 0) + 1;
+          });
+          ctrl.categories = [{ name: 'すべて', count: ctrl.allProducts.length }];
+          Object.keys(catMap).forEach(function(k) {
+            ctrl.categories.push({ name: k, count: catMap[k] });
+          });
+        };
+
+        ctrl.selectCategory = function(cat) {
+          ctrl.selectedCategory = cat;
+        };
+
+        ctrl.filteredProducts = function() {
+          if (ctrl.selectedCategory === 'すべて') return ctrl.allProducts;
+          return ctrl.allProducts.filter(function(p) { return p.category === ctrl.selectedCategory; });
+        };
+
+        ctrl.addToCart = function(product) {
+          var idx = ctrl.cart.indexOf(product.id);
+          if (idx === -1) {
+            ctrl.cart.push(product.id);
+          } else {
+            ctrl.cart.splice(idx, 1);
+          }
+        };
+      }
+    });
+
+    // ============================================
+    // ヘッダーコンポーネント（一方向バインディング）
+    // ============================================
+    app.component('appHeader', {
+      bindings: {
+        cartCount: '<'   // 一方向バインディング
+      },
+      template:
+        '<div class="app-header">' +
+        '  <h1>&#128722; テックストア</h1>' +
+        '  <div class="cart-badge">&#128722; カート: <strong>{{ $ctrl.cartCount }}</strong> 点</div>' +
+        '</div>'
+    });
+
+    // ============================================
+    // サイドバーコンポーネント（コールバックバインディング）
+    // ============================================
+    app.component('categorySidebar', {
+      bindings: {
+        categories: '<',   // 一方向バインディング
+        selected: '<',     // 一方向バインディング
+        onSelect: '&'      // コールバック
+      },
+      template:
+        '<div class="app-sidebar">' +
+        '  <div class="sidebar-title">カテゴリー</div>' +
+        '  <ul class="category-list">' +
+        '    <li ng-repeat="cat in $ctrl.categories" ng-class="{active: cat.name === $ctrl.selected}" ng-click="$ctrl.onSelect({cat: cat.name})">' +
+        '      {{ cat.name }} <span class="category-count">{{ cat.count }}</span>' +
+        '    </li>' +
+        '  </ul>' +
+        '</div>',
+      controller: function() {
+        // $onChanges ライフサイクルフック
+        this.$onChanges = function(changes) {
+          if (changes.selected) {
+            console.log('カテゴリー変更:', changes.selected.currentValue);
+          }
+        };
+      }
+    });
+
+    // ============================================
+    // 商品リストコンポーネント
+    // ============================================
+    app.component('productList', {
+      bindings: {
+        products: '<',
+        onAddToCart: '&'
+      },
+      template:
+        '<div class="app-main">' +
+        '  <div class="main-header">' +
+        '    <h2>商品一覧（{{ $ctrl.products.length }}件）</h2>' +
+        '  </div>' +
+        '  <div class="product-grid" ng-if="$ctrl.products.length > 0">' +
+        '    <product-card ng-repeat="p in $ctrl.products track by p.id" product="p" on-add="$ctrl.onAddToCart({product: product})"></product-card>' +
+        '  </div>' +
+        '  <div class="empty" ng-if="$ctrl.products.length === 0">' +
+        '    <div class="icon">&#128269;</div>' +
+        '    <p>該当する商品がありません。</p>' +
+        '  </div>' +
+        '</div>'
+    });
+
+    // ============================================
+    // 商品カードコンポーネント（最小単位）
+    // ============================================
+    app.component('productCard', {
+      bindings: {
+        product: '<',
+        onAdd: '&'
+      },
+      template:
+        '<div class="product-card">' +
+        '  <div class="product-image" ng-style="{\'background\': product.color}">' +
+        '    <span ng-bind-html="$ctrl.product.emoji"></span>' +
+        '  </div>' +
+        '  <div class="product-body">' +
+        '    <div class="product-category">{{ $ctrl.product.category }}</div>' +
+        '    <div class="product-name">{{ $ctrl.product.name }}</div>' +
+        '    <div class="rating">{{ $ctrl.getStars() }}</div>' +
+        '    <div class="product-desc">{{ $ctrl.product.desc }}</div>' +
+        '    <div class="product-footer">' +
+        '      <span class="product-price">&yen;{{ $ctrl.product.price | number }}</span>' +
+        '      <button class="btn-cart" ng-click="$ctrl.onAdd({product: $ctrl.product})">&#128722; カートに追加</button>' +
+        '    </div>' +
+        '  </div>' +
+        '</div>',
+      controller: function() {
+        var ctrl = this;
+
+        ctrl.$onInit = function() {
+          console.log('ProductCard 初期化:', ctrl.product.name);
+        };
+
+        ctrl.getStars = function() {
+          var full = Math.floor(ctrl.product.rating);
+          var half = ctrl.product.rating % 1 >= 0.5 ? 1 : 0;
+          var stars = '';
+          for (var i = 0; i < full; i++) stars += '\u2605';
+          if (half) stars += '\u2606';
+          stars += ' ' + ctrl.product.rating;
+          return stars;
+        };
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!--
+  学べる内容:
+    - AngularJSのフォームバリデーション機能
+    - ng-model とバリデーションディレクティブ（ng-required, ng-minlength, ng-pattern等）
+    - フォーム状態の活用（$pristine, $dirty, $valid, $invalid, $touched）
+    - リアルタイムエラーメッセージ表示
+    - 送信ボタンの無効化制御
+    - カスタムバリデーション（パスワード一致チェック）
+  実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    インターネット接続が必要です（CDNからAngularJSを読み込みます）。
+-->
+<!DOCTYPE html>
+<html lang="ja" ng-app="formApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フォームバリデーション - AngularJS</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 700px; margin: 0 auto; }
+    h1 { color: #fff; text-align: center; margin-bottom: 8px; font-size: 2em; text-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .subtitle { color: rgba(255,255,255,0.9); text-align: center; margin-bottom: 28px; }
+    .card { background: #fff; border-radius: 14px; padding: 28px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .card h2 { color: #2b6cb0; margin-bottom: 20px; font-size: 1.3em; border-bottom: 2px solid #bee3f8; padding-bottom: 8px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 600; color: #2d3748; margin-bottom: 6px; font-size: 0.95em; }
+    .form-group label .required { color: #e53e3e; margin-left: 2px; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"], select, textarea {
+      width: 100%; padding: 11px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79,172,254,0.15); }
+    input.ng-touched.ng-invalid, select.ng-touched.ng-invalid { border-color: #e53e3e; box-shadow: 0 0 0 3px rgba(229,62,62,0.1); }
+    input.ng-touched.ng-valid, select.ng-touched.ng-valid { border-color: #38a169; box-shadow: 0 0 0 3px rgba(56,161,105,0.1); }
+    .error-msg { color: #e53e3e; font-size: 0.85em; margin-top: 4px; }
+    .help-text { color: #a0aec0; font-size: 0.85em; margin-top: 4px; }
+    .btn-submit { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s; background: linear-gradient(135deg, #4facfe, #00f2fe); color: #fff; }
+    .btn-submit:hover:not(:disabled) { box-shadow: 0 4px 15px rgba(79,172,254,0.4); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .state-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 20px; }
+    .state-item { padding: 10px; border-radius: 8px; text-align: center; font-size: 0.85em; font-weight: 600; }
+    .state-true { background: #c6f6d5; color: #276749; }
+    .state-false { background: #fed7d7; color: #9b2c2c; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; }
+    .checkbox-group input { width: 18px; height: 18px; accent-color: #4facfe; }
+    .success-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .success-card { background: #fff; border-radius: 16px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .success-card .icon { font-size: 4em; margin-bottom: 16px; }
+    .success-card h3 { color: #2f855a; margin-bottom: 8px; font-size: 1.4em; }
+    .success-card p { color: #718096; margin-bottom: 20px; }
+    .success-card button { padding: 10px 28px; border: none; border-radius: 8px; background: #4facfe; color: #fff; font-size: 1em; cursor: pointer; }
+    .row { display: flex; gap: 16px; }
+    .row .form-group { flex: 1; }
+    .password-strength { height: 6px; border-radius: 3px; margin-top: 6px; transition: all 0.3s; }
+    .strength-weak { background: #e53e3e; width: 33%; }
+    .strength-medium { background: #ecc94b; width: 66%; }
+    .strength-strong { background: #38a169; width: 100%; }
+  </style>
+</head>
+<body ng-controller="FormCtrl">
+  <div class="container">
+    <h1>フォームバリデーション</h1>
+    <p class="subtitle">AngularJSによるリアルタイムフォーム検証を体験しましょう</p>
+
+    <!-- フォーム状態パネル -->
+    <div class="card">
+      <h2>フォーム状態モニター</h2>
+      <div class="state-panel">
+        <div class="state-item" ng-class="regForm.$pristine ? 'state-true' : 'state-false'">
+          $pristine: {{ regForm.$pristine }}
+        </div>
+        <div class="state-item" ng-class="regForm.$dirty ? 'state-true' : 'state-false'">
+          $dirty: {{ regForm.$dirty }}
+        </div>
+        <div class="state-item" ng-class="regForm.$valid ? 'state-true' : 'state-false'">
+          $valid: {{ regForm.$valid }}
+        </div>
+        <div class="state-item" ng-class="regForm.$invalid ? 'state-false' : 'state-true'">
+          $invalid: {{ regForm.$invalid }}
+        </div>
+      </div>
+      <p style="color:#718096; font-size:0.9em;">
+        <strong>$pristine:</strong> 未編集状態
+        <strong>$dirty:</strong> 編集済み状態
+        <strong>$valid:</strong> 全項目が有効
+        <strong>$invalid:</strong> 無効な項目あり
+      </p>
+    </div>
+
+    <!-- 登録フォーム -->
+    <div class="card">
+      <h2>ユーザー登録フォーム</h2>
+      <form name="regForm" ng-submit="submitForm()" novalidate>
+
+        <!-- 名前 -->
+        <div class="row">
+          <div class="form-group">
+            <label>姓 <span class="required">*</span></label>
+            <input type="text" name="lastName" ng-model="user.lastName" required ng-minlength="1" placeholder="山田">
+            <div class="error-msg" ng-show="regForm.lastName.$touched && regForm.lastName.$error.required">姓は必須です。</div>
+          </div>
+          <div class="form-group">
+            <label>名 <span class="required">*</span></label>
+            <input type="text" name="firstName" ng-model="user.firstName" required ng-minlength="1" placeholder="太郎">
+            <div class="error-msg" ng-show="regForm.firstName.$touched && regForm.firstName.$error.required">名は必須です。</div>
+          </div>
+        </div>
+
+        <!-- メールアドレス -->
+        <div class="form-group">
+          <label>メールアドレス <span class="required">*</span></label>
+          <input type="email" name="email" ng-model="user.email" required placeholder="taro@example.com">
+          <div class="error-msg" ng-show="regForm.email.$touched && regForm.email.$error.required">メールアドレスは必須です。</div>
+          <div class="error-msg" ng-show="regForm.email.$touched && regForm.email.$error.email">有効なメールアドレスを入力してください。</div>
+        </div>
+
+        <!-- 電話番号 -->
+        <div class="form-group">
+          <label>電話番号</label>
+          <input type="tel" name="phone" ng-model="user.phone" ng-pattern="/^[0-9\-]{10,13}$/" placeholder="090-1234-5678">
+          <div class="error-msg" ng-show="regForm.phone.$touched && regForm.phone.$error.pattern">有効な電話番号を入力してください（例: 090-1234-5678）。</div>
+          <div class="help-text" ng-hide="regForm.phone.$touched && regForm.phone.$error.pattern">ハイフン付き、10〜13桁で入力してください。</div>
+        </div>
+
+        <!-- パスワード -->
+        <div class="form-group">
+          <label>パスワード <span class="required">*</span></label>
+          <input type="password" name="password" ng-model="user.password" required ng-minlength="8" placeholder="8文字以上">
+          <div class="password-strength" ng-show="user.password" ng-class="{'strength-weak': getPasswordStrength() === 1, 'strength-medium': getPasswordStrength() === 2, 'strength-strong': getPasswordStrength() === 3}"></div>
+          <div class="help-text" ng-show="user.password">
+            強度: {{ getPasswordStrength() === 1 ? '弱い' : (getPasswordStrength() === 2 ? '普通' : '強い') }}
+          </div>
+          <div class="error-msg" ng-show="regForm.password.$touched && regForm.password.$error.required">パスワードは必須です。</div>
+          <div class="error-msg" ng-show="regForm.password.$touched && regForm.password.$error.minlength">パスワードは8文字以上で入力してください。</div>
+        </div>
+
+        <!-- パスワード確認 -->
+        <div class="form-group">
+          <label>パスワード（確認） <span class="required">*</span></label>
+          <input type="password" name="confirmPassword" ng-model="user.confirmPassword" required match-password="user.password" placeholder="パスワードを再入力">
+          <div class="error-msg" ng-show="regForm.confirmPassword.$touched && regForm.confirmPassword.$error.required">パスワード確認は必須です。</div>
+          <div class="error-msg" ng-show="regForm.confirmPassword.$touched && regForm.confirmPassword.$error.passwordMatch">パスワードが一致しません。</div>
+        </div>
+
+        <!-- 職業 -->
+        <div class="form-group">
+          <label>職業 <span class="required">*</span></label>
+          <select name="occupation" ng-model="user.occupation" required>
+            <option value="">選択してください</option>
+            <option value="engineer">エンジニア</option>
+            <option value="designer">デザイナー</option>
+            <option value="manager">マネージャー</option>
+            <option value="student">学生</option>
+            <option value="other">その他</option>
+          </select>
+          <div class="error-msg" ng-show="regForm.occupation.$touched && regForm.occupation.$error.required">職業を選択してください。</div>
+        </div>
+
+        <!-- 利用規約 -->
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" name="agree" ng-model="user.agree" required>
+            <label style="margin-bottom:0; font-weight:normal;">利用規約に同意します <span class="required">*</span></label>
+          </div>
+          <div class="error-msg" ng-show="regForm.agree.$touched && !user.agree">利用規約への同意が必要です。</div>
+        </div>
+
+        <!-- 送信ボタン -->
+        <button type="submit" class="btn-submit" ng-disabled="regForm.$invalid">
+          {{ regForm.$invalid ? '入力内容を確認してください' : '登録する' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- 成功メッセージ -->
+    <div class="success-overlay" ng-show="submitted" ng-click="closeSuccess()">
+      <div class="success-card" ng-click="$event.stopPropagation()">
+        <div class="icon">&#10004;&#65039;</div>
+        <h3>登録完了！</h3>
+        <p>{{ user.lastName }} {{ user.firstName }} さんの登録が完了しました。</p>
+        <button ng-click="closeSuccess()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    angular.module('formApp', [])
+
+      // カスタムバリデーション: パスワード一致チェック
+      .directive('matchPassword', function() {
+        return {
+          require: 'ngModel',
+          scope: { matchPassword: '=' },
+          link: function(scope, elem, attrs, ngModel) {
+            ngModel.$validators.passwordMatch = function(modelValue) {
+              return modelValue === scope.matchPassword;
+            };
+            scope.$watch('matchPassword', function() {
+              ngModel.$validate();
+            });
+          }
+        };
+      })
+
+      .controller('FormCtrl', function($scope) {
+        $scope.user = {};
+        $scope.submitted = false;
+
+        // パスワード強度チェック
+        $scope.getPasswordStrength = function() {
+          var pw = $scope.user.password || '';
+          if (pw.length < 8) return 1;
+          var score = 0;
+          if (/[a-z]/.test(pw)) score++;
+          if (/[A-Z]/.test(pw)) score++;
+          if (/[0-9]/.test(pw)) score++;
+          if (/[^a-zA-Z0-9]/.test(pw)) score++;
+          if (score <= 1) return 1;
+          if (score <= 2) return 2;
+          return 3;
+        };
+
+        // フォーム送信
+        $scope.submitForm = function() {
+          if ($scope.regForm.$valid) {
+            $scope.submitted = true;
+          }
+        };
+
+        // 成功メッセージを閉じる
+        $scope.closeSuccess = function() {
+          $scope.submitted = false;
+          $scope.user = {};
+          $scope.regForm.$setPristine();
+          $scope.regForm.$setUntouched();
+        };
+      });
+  </script>
+</body>
+</html>

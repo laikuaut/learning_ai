@@ -1,0 +1,150 @@
+<!--
+  学べる内容:
+    - AngularJSの基本的なデータバインディング（{{ }} 式展開）
+    - ng-model による双方向バインディング
+    - ng-click によるイベント処理（カウンター）
+    - ng-repeat によるリスト表示
+    - ng-if / ng-show による条件付き表示
+  実行方法:
+    このHTMLファイルをブラウザで開くだけで動作します。
+    インターネット接続が必要です（CDNからAngularJSを読み込みます）。
+-->
+<!DOCTYPE html>
+<html lang="ja" ng-app="firstApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>はじめてのAngularJS</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { color: #fff; text-align: center; margin-bottom: 24px; font-size: 2em; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .subtitle { color: rgba(255,255,255,0.85); text-align: center; margin-bottom: 32px; font-size: 1.1em; }
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .card h2 { color: #5a67d8; margin-bottom: 16px; font-size: 1.3em; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+    .card h2 .badge { background: #667eea; color: #fff; font-size: 0.65em; padding: 3px 10px; border-radius: 12px; margin-left: 8px; vertical-align: middle; }
+    input[type="text"], input[type="number"] { width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; }
+    input:focus { outline: none; border-color: #667eea; }
+    .display-text { background: #f7fafc; padding: 14px; border-radius: 8px; margin-top: 12px; font-size: 1.1em; color: #2d3748; border-left: 4px solid #667eea; }
+    .counter-area { display: flex; align-items: center; gap: 16px; justify-content: center; margin-top: 12px; }
+    .counter-area .count { font-size: 3em; font-weight: bold; color: #5a67d8; min-width: 80px; text-align: center; }
+    button { padding: 10px 20px; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; transition: all 0.2s; }
+    button:hover { transform: translateY(-1px); }
+    .btn-primary { background: #667eea; color: #fff; }
+    .btn-primary:hover { background: #5a67d8; }
+    .btn-danger { background: #fc8181; color: #fff; }
+    .btn-danger:hover { background: #f56565; }
+    .btn-sm { padding: 6px 14px; font-size: 0.9em; }
+    ul.item-list { list-style: none; margin-top: 12px; }
+    ul.item-list li { padding: 10px 14px; background: #f7fafc; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #667eea; }
+    .add-area { display: flex; gap: 8px; margin-top: 12px; }
+    .add-area input { flex: 1; }
+    .toggle-box { margin-top: 12px; padding: 16px; border-radius: 8px; text-align: center; font-size: 1.1em; transition: all 0.3s; }
+    .toggle-box.visible { background: #c6f6d5; color: #276749; }
+    .toggle-box.hidden { background: #fed7d7; color: #9b2c2c; }
+    .label { font-size: 0.85em; color: #718096; margin-bottom: 6px; }
+  </style>
+</head>
+<body ng-controller="MainCtrl">
+  <div class="container">
+    <h1>はじめてのAngularJS</h1>
+    <p class="subtitle">AngularJSの基本機能をインタラクティブに体験しましょう</p>
+
+    <!-- 双方向バインディング -->
+    <div class="card">
+      <h2>双方向バインディング <span class="badge">ng-model</span></h2>
+      <p class="label">テキストを入力すると、リアルタイムに表示が更新されます</p>
+      <input type="text" ng-model="greeting" placeholder="ここに名前を入力してください">
+      <div class="display-text">
+        こんにちは、<strong>{{ greeting || 'ゲスト' }}</strong> さん！AngularJSへようこそ！
+      </div>
+    </div>
+
+    <!-- カウンター -->
+    <div class="card">
+      <h2>カウンター <span class="badge">ng-click</span></h2>
+      <p class="label">ボタンをクリックしてカウントを操作します</p>
+      <div class="counter-area">
+        <button class="btn-danger btn-sm" ng-click="count = count - 1">− 減らす</button>
+        <span class="count">{{ count }}</span>
+        <button class="btn-primary btn-sm" ng-click="count = count + 1">＋ 増やす</button>
+      </div>
+      <div class="display-text" style="text-align:center; margin-top:16px;">
+        カウントは <strong>{{ count >= 0 ? '正の数' : '負の数' }}</strong> です
+      </div>
+    </div>
+
+    <!-- リスト表示 -->
+    <div class="card">
+      <h2>リスト表示 <span class="badge">ng-repeat</span></h2>
+      <p class="label">アイテムを追加・削除できます</p>
+      <div class="add-area">
+        <input type="text" ng-model="newItem" placeholder="新しいアイテムを入力" ng-keypress="$event.keyCode === 13 && addItem()">
+        <button class="btn-primary" ng-click="addItem()">追加</button>
+      </div>
+      <ul class="item-list">
+        <li ng-repeat="item in items track by $index">
+          <span>{{ $index + 1 }}. {{ item }}</span>
+          <button class="btn-danger btn-sm" ng-click="removeItem($index)">削除</button>
+        </li>
+      </ul>
+      <div class="display-text" ng-show="items.length === 0">
+        アイテムがありません。上のフォームから追加してください。
+      </div>
+    </div>
+
+    <!-- 条件付き表示 -->
+    <div class="card">
+      <h2>条件付き表示 <span class="badge">ng-if / ng-show</span></h2>
+      <p class="label">チェックボックスで表示を切り替えます</p>
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:1.05em;">
+        <input type="checkbox" ng-model="showSecret" style="width:18px; height:18px;">
+        秘密のメッセージを表示する
+      </label>
+      <div class="toggle-box" ng-class="showSecret ? 'visible' : 'hidden'">
+        <div ng-if="showSecret">
+          <strong>秘密のメッセージ:</strong> AngularJSの学習、頑張りましょう！ (ng-if: DOMに存在)
+        </div>
+        <div ng-if="!showSecret">
+          チェックを入れるとメッセージが表示されます (ng-if: 要素が除去されます)
+        </div>
+      </div>
+      <div class="display-text" style="margin-top:12px; font-size:0.9em; color:#718096;">
+        ng-if は条件が偽のとき DOM から要素を完全に削除します。<br>
+        ng-show は CSS の display で表示/非表示を切り替えます（DOM には残ります）。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    angular.module('firstApp', [])
+      .controller('MainCtrl', function($scope) {
+        // 双方向バインディング用
+        $scope.greeting = '';
+
+        // カウンター
+        $scope.count = 0;
+
+        // リスト
+        $scope.items = ['JavaScript', 'TypeScript', 'AngularJS'];
+        $scope.newItem = '';
+
+        $scope.addItem = function() {
+          if ($scope.newItem.trim()) {
+            $scope.items.push($scope.newItem.trim());
+            $scope.newItem = '';
+          }
+        };
+
+        $scope.removeItem = function(index) {
+          $scope.items.splice(index, 1);
+        };
+
+        // 条件付き表示
+        $scope.showSecret = false;
+      });
+  </script>
+</body>
+</html>
